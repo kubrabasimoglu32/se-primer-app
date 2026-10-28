@@ -1,0 +1,6 @@
+{
+  "name": "SE Primer",
+  "description": "Yazılım mühendisliği mobil mentorluk, mimari karar ve proje takip uygulaması.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

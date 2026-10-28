@@ -1,0 +1,706 @@
+{
+  "surum": 2,
+  "aciklama": "SE Primer soru bankası v2. Tüm sorular seçeneklidir. Kod hangi KONU'nun sorulacağını seçer; yapay zekâ seçilen sorunun metnini ve seçenek metinlerini kullanıcının projesine uyarlar. Seçeneklerin anlamı, risk etiketi, sonuc ve neden alanları DEĞİŞTİRİLMEZ. 'karar' sorularında 2-3 seçenek vardır. 'kontrol' sorularında seçenekler her zaman Evet / Hayır / Emin değilim'dir; Hayır ve Emin değilim hayirRisk'i açık risklere ekler. Her soruda isteğe bağlı 'Neden bunu seçtin?' alanı vardır; tutor buna Sokratik bir soruyla cevap verir. 'beklenen' alanı yalnızca tutora verilir, öğrenciye GÖSTERİLMEZ. {proje} alanı ek almadan kullanılır ('{proje} projesinde').",
+  "konular": [
+    "kapsam",
+    "mimari",
+    "veriTabani",
+    "dosyaDuzeni",
+    "test",
+    "guvenlik",
+    "dagitim",
+    "rapor"
+  ],
+  "sorular": [
+    {
+      "id": "K-01",
+      "konu": "kapsam",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "fikir",
+          "tasarim",
+          "kodlama"
+        ],
+        "degisiklik": [
+          "yeniOzellik",
+          "plan"
+        ]
+      },
+      "metin": "Teslime kadar {proje} için planladığın özelliklerden birinin yetişmeyeceğini fark ettin. Ne yaparsın?",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Yazılı olarak kapsam dışına alırım, kalan özellikleri sağlamlaştırırım",
+          "risk": "dusuk",
+          "sonuc": "Plan netleşti. Teslimde az ama çalışan bir çekirdek var.",
+          "neden": "Kapsam dışı listesi, neyin yapılmayacağını herkes için görünür kılar. Yapay zekâ ajanı da boşluğu kendi doldurmaz."
+        },
+        {
+          "id": "B",
+          "metin": "Hızlı bir taslakla yetiştiririm",
+          "risk": "yuksek",
+          "sonuc": "Özellik ekranda var ama yarım. Demoda ilk bozulan yer orası oldu.",
+          "neden": "Yarım bir özellik, hiç olmayan bir özellikten daha çok soru doğurur ve diğer özelliklerin test süresini yer."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "K-02",
+      "konu": "kapsam",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "fikir",
+          "tasarim",
+          "kodlama",
+          "test"
+        ]
+      },
+      "metin": "{proje} projesinde en önemli özelliğin için aşağıdakilerden hangisi en iyi “bitti” tanımı olur?",
+      "beklenen": "Somut bir girdi ve gözlenebilir bir çıktı içeren bir örnek (ör. 'Kayıtlı kullanıcı etkinliğe katıl'a basınca katılımcı sayısı 1 artar').",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "“Kayıtlı kullanıcı şu düğmeye basınca şu sonuç görünür” gibi somut bir girdi ve gözlenebilir bir çıktı",
+          "risk": "dusuk",
+          "sonuc": "Bu cümleyi doğrudan bir teste çevirebildin. Özelliğin bitip bitmediği artık tartışma konusu değil.",
+          "neden": "Kabul örneği, “bitti”yi ölçülebilir hâle getirir. Hem sen hem yapay zekâ ajanı aynı hedefe bakar."
+        },
+        {
+          "id": "B",
+          "metin": "“Özellik sorunsuz ve hızlı çalışmalı”",
+          "risk": "yuksek",
+          "sonuc": "Herkes özelliğin bittiğini düşündü ama demoda bir kenar durumu çöktü. “Sorunsuz” kimin için, hangi girdide?",
+          "neden": "Ölçülemeyen bir tanım test edilemez. Test edilemeyen bir özelliğin bittiğini kimse kanıtlayamaz."
+        },
+        {
+          "id": "C",
+          "metin": "“Kod yazıldı ve testler geçiyor”",
+          "risk": "orta",
+          "sonuc": "Testler yeşil. Ama testlerin neyi kontrol ettiğini tanımlamadığın için kullanıcının istediği davranış hiç denenmedi.",
+          "neden": "Testin geçmesi, testin kontrol ettiği şeyin doğru olduğunu gösterir. Neyin kontrol edileceğini kabul örneği belirler."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "M-01",
+      "konu": "mimari",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "tasarim",
+          "kodlama"
+        ],
+        "mimari": [
+          "bilmiyorum",
+          "sunucusuz"
+        ]
+      },
+      "metin": "Yeni bir özellik için {onYuz} ön yüzünün {veriTabani} veri tabanına yazması gerekiyor. Nasıl kurarsın?",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Araya bir sunucu fonksiyonu ya da API koyarım; ön yüz yalnızca onu çağırır",
+          "risk": "dusuk",
+          "sonuc": "Yazma kuralları tek bir yerde. Bir hata çıktığında nereye bakacağını biliyorsun.",
+          "neden": "İş kuralları ve yetki kontrolü sunucuda durursa kullanıcının tarayıcısında değiştirilemez."
+        },
+        {
+          "id": "B",
+          "metin": "Ön yüzden doğrudan yazarım, kuralları sonra düzenlerim",
+          "risk": "yuksek",
+          "sonuc": "Hızlı çalıştı. Ama tarayıcı konsolunu açan biri başka kullanıcıların kaydını değiştirebildi.",
+          "neden": "Ön yüzdeki kod kullanıcının elindedir. Kontrolü yalnızca ön yüze koymak, kontrolü kullanıcıya bırakmaktır."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "M-02",
+      "konu": "mimari",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "tasarim",
+          "kodlama",
+          "test"
+        ]
+      },
+      "metin": "{proje} projesinin kullanıcı sayısı bir gecede 10 katına çıksa ilk ne yaparsın?",
+      "beklenen": "Belirli bir bileşeni (veri tabanı sorgusu, dış servis, sunucu) adlandırması ve bir gerekçe göstermesi.",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Sistemde en çok yük alacak bileşeni (ör. sık çalışan bir veri tabanı sorgusu) belirler, ölçerek doğrularım",
+          "risk": "dusuk",
+          "sonuc": "Ölçünce yükün çoğunun indekssiz tek bir sorgudan geldiğini gördün. Bir indeks eklemek sunucu büyütmekten daha çok işe yaradı.",
+          "neden": "Darboğaz tahminle değil ölçümle bulunur. Doğru yeri bulmadan yapılan iyileştirme çoğu zaman yanlış yere harcanır."
+        },
+        {
+          "id": "B",
+          "metin": "Sunucuyu büyütürüm, nerede tıkandığına bakmam",
+          "risk": "orta",
+          "sonuc": "Fatura arttı ama sayfa hâlâ yavaş. Sorun sunucuda değil, her istekte tüm tabloyu tarayan bir sorgudaydı.",
+          "neden": "Kaynak eklemek, darboğaz o kaynaksa işe yarar. Değilse maliyeti artırır ama sorunu çözmez."
+        },
+        {
+          "id": "C",
+          "metin": "Tıkanmaz, bulut kendiliğinden ölçeklenir",
+          "risk": "yuksek",
+          "sonuc": "Uygulama ayakta kaldı ama veri tabanı bağlantı sınırına dayandı ve isteklerin bir kısmı hata verdi.",
+          "neden": "Bulutun ölçeklenmesi her bileşen için geçerli değildir. Veri tabanı ve dış servislerin kendi sınırları vardır."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "M-03",
+      "konu": "mimari",
+      "tur": "kontrol",
+      "tetik": {
+        "asama": [
+          "tasarim",
+          "kodlama"
+        ]
+      },
+      "metin": "Projenin parçalarını (ön yüz, sunucu, veri tabanı, dış servisler) ve aralarındaki bağlantıları gösteren bir şeman var mı?",
+      "evetSonuc": "Şeman var. Yeni bir karar verirken neyin neyi etkilediğini görebiliyorsun.",
+      "hayirRisk": "Mimari şema yok: değişikliklerin etkisi tahmin edilemiyor.",
+      "secenekler": [
+        "Evet",
+        "Hayır",
+        "Emin değilim"
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "V-01",
+      "konu": "veriTabani",
+      "tur": "karar",
+      "tetik": {
+        "degisiklik": [
+          "veriTabani"
+        ]
+      },
+      "metin": "{veriTabani} veri tabanının yapısını değiştirdin. İçerideki mevcut kayıtlar ne olacak?",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Bir taşıma (migration) adımı yazar, önce verinin bir kopyasında denerim",
+          "risk": "dusuk",
+          "sonuc": "Kopyada iki kaydın yeni alana uymadığını gördün ve düzelttin. Asıl veri hiç bozulmadı.",
+          "neden": "Şema değişikliği yalnızca kodu değil veriyi de değiştirir. Kopyada denemek geri dönüşü olmayan hatayı geri dönüşlü yapar."
+        },
+        {
+          "id": "B",
+          "metin": "Yeni yapı eskiyle uyumlu sayılır, dokunmam",
+          "risk": "yuksek",
+          "sonuc": "Eski kayıtlarda yeni alan boş geldi. Liste ekranı bu kayıtlarda çöktü.",
+          "neden": "'Uyumlu sayılır' bir varsayımdır. Varsayım test edilmeden üretime giderse hata kullanıcıda ortaya çıkar."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "V-02",
+      "konu": "veriTabani",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "tasarim",
+          "kodlama",
+          "test"
+        ]
+      },
+      "metin": "{proje} projesinde bir kullanıcı hesabını silince ona ait kayıtlara ne oluyor?",
+      "beklenen": "Bağlı kayıtların akıbetini (silinir, anonimleşir, kalır) ve bunun gerekçesini söylemesi.",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Bağlı kayıtlar için bilinçli bir kural koydum (silinir ya da anonimleşir) ve nedenini yazdım",
+          "risk": "dusuk",
+          "sonuc": "Silinen kullanıcının kayıtları kuralına göre temizlendi. Ekranlarda “sahibi olmayan” kayıt kalmadı.",
+          "neden": "Silme işlemi yalnızca bir satırı değil, ona bağlı veriyi de ilgilendirir. Kişisel verinin silinmesi KVKK açısından da bir yükümlülüktür."
+        },
+        {
+          "id": "B",
+          "metin": "Kullanıcıyı silerim, bağlı kayıtlar olduğu gibi kalır",
+          "risk": "yuksek",
+          "sonuc": "Liste ekranında sahibi silinmiş kayıtlar “undefined” adıyla görünmeye başladı. Silinen kişinin bilgileri de hâlâ duruyor.",
+          "neden": "Sahibi olmayan (yetim) kayıtlar hem hata kaynağıdır hem de silinmesi gereken kişisel verinin silinmemesi demektir."
+        },
+        {
+          "id": "C",
+          "metin": "Bunu henüz düşünmedim, şimdilik silme özelliği yok",
+          "risk": "orta",
+          "sonuc": "Şimdilik sorun yok. Ama ilk kullanıcı hesabını silmek istediğinde elinde bir kural olmayacak.",
+          "neden": "Bir özelliğin olmaması, o durumun yaşanmayacağı anlamına gelmez. Kararı erken vermek, sonradan veri düzeltmekten ucuzdur."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "V-03",
+      "konu": "veriTabani",
+      "tur": "kontrol",
+      "tetik": {
+        "veriTabani": [
+          "Firebase",
+          "Firestore",
+          "MongoDB",
+          "PostgreSQL",
+          "MySQL",
+          "SQLite"
+        ]
+      },
+      "metinFirebase": "Firestore/Firebase güvenlik kuralların 'test modundan' (herkes okur, herkes yazar) çıkarıldı mı?",
+      "metinSql": "Sorgularında kullanıcıdan gelen değeri metne ekleyerek mi kuruyorsun, yoksa parametreli sorgu mu kullanıyorsun?",
+      "metin": "Veri tabanına erişimi kim, hangi kuralla yapabiliyor; bunu kontrol ettin mi?",
+      "evetSonuc": "Erişim kuralların kontrol edilmiş durumda.",
+      "hayirRisk": "Veri tabanı erişim kuralları kontrol edilmedi.",
+      "secenekler": [
+        "Evet",
+        "Hayır",
+        "Emin değilim"
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "V-04",
+      "konu": "veriTabani",
+      "tur": "kontrol",
+      "tetik": {
+        "asama": [
+          "kodlama",
+          "test",
+          "teslim"
+        ]
+      },
+      "metin": "Verinin bir yedeği var mı? Yedekten geri yüklemeyi hiç denedin mi?",
+      "evetSonuc": "Yedek var ve geri yüklenebildiğini biliyorsun.",
+      "hayirRisk": "Yedek yok ya da geri yükleme hiç denenmedi.",
+      "secenekler": [
+        "Evet",
+        "Hayır",
+        "Emin değilim"
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "D-01",
+      "konu": "dosyaDuzeni",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "kodlama"
+        ],
+        "dosyaYapisiVar": true
+      },
+      "metin": "{enKalabalikKlasor} klasöründe {dosyaSayisi} dosya birikmiş. Nasıl düzenlersin?",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Özelliğe göre klasörlere ayırırım (ör. etkinlik/, kullanici/)",
+          "risk": "dusuk",
+          "sonuc": "Bir özelliği değiştirirken artık tek bir klasörde çalışıyorsun.",
+          "neden": "Birlikte değişen dosyaların birlikte durması, bir değişikliğin nereleri etkilediğini görmeyi kolaylaştırır."
+        },
+        {
+          "id": "B",
+          "metin": "Olduğu gibi bırakırım, dosya adları yeterli",
+          "risk": "orta",
+          "sonuc": "Şimdilik sorun yok. Ama ekip arkadaşın giriş ekranının kodunu bulmak için 10 dakika aradı.",
+          "neden": "Dosya düzeni, kodu yazan için değil okuyan için vardır. Proje büyüdükçe arama maliyeti artar."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "D-02",
+      "konu": "dosyaDuzeni",
+      "tur": "kontrol",
+      "tetik": {
+        "asama": [
+          "kodlama",
+          "test",
+          "teslim"
+        ]
+      },
+      "metin": "API anahtarı ya da şifre içeren dosyan (.env vb.) .gitignore'da mı?",
+      "evetSonuc": "Gizli bilgiler repoya girmiyor.",
+      "hayirRisk": "Gizli anahtarlar repoya girebilir (.env .gitignore'da değil).",
+      "secenekler": [
+        "Evet",
+        "Hayır",
+        "Emin değilim"
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "D-03",
+      "konu": "dosyaDuzeni",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "kodlama",
+          "test"
+        ]
+      },
+      "metin": "{proje} projesine yeni katılan biri, giriş ekranının kodunu nasıl bulur?",
+      "beklenen": "Klasör adlarının içerik hakkında ne söylediğini değerlendirmesi.",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Klasör adlarına bakarak tahmin eder (ör. features/giris)",
+          "risk": "dusuk",
+          "sonuc": "Yeni ekip arkadaşın 1 dakikada buldu ve ilk değişikliğini ilk gün yaptı.",
+          "neden": "İyi bir dosya düzeni kendini anlatır. Kodu yazan için değil, okuyan için vardır."
+        },
+        {
+          "id": "B",
+          "metin": "Bana sorar, ben gösteririm",
+          "risk": "orta",
+          "sonuc": "Sen müsaitken sorun yok. Sen yokken o, yarım saat aradı.",
+          "neden": "Bilgi bir kişinin hafızasında kalırsa ekip o kişiye bağımlı olur. Bu, projenin en dar boğazıdır."
+        },
+        {
+          "id": "C",
+          "metin": "Editörde arama yapar, bir şekilde bulur",
+          "risk": "orta",
+          "sonuc": "Buldu, ama aynı adı taşıyan üç dosya vardı ve yanlış olanı değiştirdi.",
+          "neden": "Arama, düzenin yerini tutmaz. Benzer adlı dosyalar çoğaldıkça yanlış yeri değiştirme riski artar."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "T-01",
+      "konu": "test",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "kodlama",
+          "test"
+        ],
+        "test": [
+          "hic",
+          "biraz"
+        ]
+      },
+      "metin": "Teslimden önce {proje} projesinde yalnızca bir şeyi test edecek vaktin var. Hangisini seçersin?",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Kullanıcının en çok kullandığı akışı baştan sona test ederim",
+          "risk": "dusuk",
+          "sonuc": "Test, kayıt sonrası yönlendirmenin bozulduğunu yakaladı. Demodan önce düzelttin.",
+          "neden": "Sınırlı test zamanı, bozulduğunda en çok zarar verecek yere harcanmalıdır."
+        },
+        {
+          "id": "B",
+          "metin": "Test etmesi kolay olan yardımcı fonksiyonları test ederim",
+          "risk": "orta",
+          "sonuc": "12 test yeşil. Ama demoda kayıt akışı bozuldu, o akışın testi yoktu.",
+          "neden": "Test sayısı güven ölçüsü değildir. Önemli olan neyin test edildiğidir."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "T-02",
+      "konu": "test",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "kodlama",
+          "test",
+          "teslim"
+        ]
+      },
+      "metin": "{proje} projesinde en kritik akış bozulursa bunu nasıl öğrenirsin?",
+      "beklenen": "Belirli bir akışı adlandırması ve bir tespit yolu (test, izleme, log) önermesi.",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "O akış için otomatik bir test ve hataları kaydeden bir log ya da izleme var",
+          "risk": "dusuk",
+          "sonuc": "Bir değişiklik o akışı bozdu. Test birleştirmeden önce kırmızıya döndü ve hata kullanıcıya hiç ulaşmadı.",
+          "neden": "Kritik akışın bozulduğunu kullanıcıdan önce öğrenmenin tek yolu onu otomatik olarak gözlemektir."
+        },
+        {
+          "id": "B",
+          "metin": "Yayından önce elle denerim",
+          "risk": "orta",
+          "sonuc": "Denedin ve çalıştı. Ama bir hafta sonra başka bir değişiklik aynı akışı bozdu ve o sefer denemeyi unuttun.",
+          "neden": "Elle deneme bir kez işe yarar. Tekrar tekrar yapılması gereken kontrol otomatik olmalıdır."
+        },
+        {
+          "id": "C",
+          "metin": "Kullanıcılar haber verir",
+          "risk": "yuksek",
+          "sonuc": "İlk haber üç gün sonra geldi. O sürede kayıt olmaya çalışan herkes vazgeçmişti.",
+          "neden": "Kullanıcı şikâyeti en geç ve en pahalı uyarıdır. Çoğu kullanıcı haber vermez, sadece gider."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "T-03",
+      "konu": "test",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "kodlama",
+          "test"
+        ]
+      },
+      "metin": "Yapay zekâ kodlama ajanın '{proje} için tüm testler geçti' dedi. Ne yaparsın?",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Testleri okurum ve kendi kabul örneğimi gerçek akışta koşarım",
+          "risk": "dusuk",
+          "sonuc": "Testlerin bir kısmının gerçek kodu değil sahte bir nesneyi denediğini gördün. Kabul örneğin bir hatayı yakaladı.",
+          "neden": "Ajanın testleri ajanın anladığını doğrular, senin istediğini değil. Doğrulama üretenden bağımsız olmalıdır."
+        },
+        {
+          "id": "B",
+          "metin": "Testler yeşil, birleştiririm",
+          "risk": "yuksek",
+          "sonuc": "Birleştirdin. İki gün sonra kullanıcı bir hata bildirdi. Testler hâlâ yeşil.",
+          "neden": "Yeşil test, testin kontrol ettiği şeyin doğru olduğunu söyler. Neyi kontrol etmediğini söylemez."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "G-01",
+      "konu": "guvenlik",
+      "tur": "karar",
+      "tetik": {
+        "kisiselVeri": [
+          true,
+          "bilmiyorum"
+        ]
+      },
+      "metin": "{proje} projesinde tuttuğun kişisel veri alanları hakkında hangisi doğru?",
+      "beklenen": "Alanları tek tek ele alması ve en az birinde gereklilik sorgulaması (veri minimizasyonu).",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Her alanın neden gerektiğini biliyorum, gereksiz olanları tutmuyorum",
+          "risk": "dusuk",
+          "sonuc": "Formdan doğum tarihini çıkardın, çünkü hiçbir özellik onu kullanmıyordu. Korunması gereken veri azaldı.",
+          "neden": "Tutmadığın veri sızdırılamaz. KVKK'nın ölçülülük ilkesi (m.4) de verinin amaçla sınırlı olmasını ister."
+        },
+        {
+          "id": "B",
+          "metin": "İleride lazım olur diye ne kadar çok tutarsam o kadar iyi",
+          "risk": "yuksek",
+          "sonuc": "Hiç kullanılmayan alanlar birikti. Bir veri sızıntısında bu alanlar da sızdı.",
+          "neden": "Her fazladan alan, korunması gereken ve sızdığında sorumlu olacağın bir veridir."
+        },
+        {
+          "id": "C",
+          "metin": "Hepsi gerekli sanırım, tek tek kontrol etmedim",
+          "risk": "orta",
+          "sonuc": "Şimdilik sorun yok. Ama bir kullanıcı “bu bilgiyi neden istiyorsunuz?” diye sorduğunda cevabın yoktu.",
+          "neden": "Bir veriyi neden tuttuğunu söyleyemiyorsan, tutmaman gerekiyor olabilir."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "G-02",
+      "konu": "guvenlik",
+      "tur": "karar",
+      "tetik": {
+        "kisiselVeri": [
+          true
+        ],
+        "degisiklik": [
+          "hataCikti"
+        ]
+      },
+      "metin": "Bir hatayı ayıklamak için gerçek kullanıcı verisini bir yapay zekâ aracına ya da dış servise vermen gerekiyor gibi görünüyor. Ne yaparsın?",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Verinin yapısını koruyan sahte (maskelenmiş) bir örnek hazırlarım",
+          "risk": "dusuk",
+          "sonuc": "Hata yapı kaynaklıydı ve sahte veriyle de bulundu. Hiçbir gerçek kişinin verisi dışarı çıkmadı.",
+          "neden": "Hata ayıklamak için çoğu zaman verinin yapısı gerekir, kime ait olduğu değil. KVKK'da veriler toplanma amacıyla sınırlı işlenir (m.4)."
+        },
+        {
+          "id": "B",
+          "metin": "Gerçek veriyi olduğu gibi veririm, daha hızlı",
+          "risk": "yuksek",
+          "sonuc": "Hata bulundu. Ama kullanıcıların adı ve e-postası artık senin kontrol etmediğin bir sunucuda.",
+          "neden": "Dış bir servise gönderilen veri kurum dışına çıkmış veridir. Yurt dışına aktarım ayrıca koşullara bağlıdır (KVKK m.9)."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "G-03",
+      "konu": "guvenlik",
+      "tur": "kontrol",
+      "tetik": {
+        "degisiklik": [
+          "yayinaAldim"
+        ],
+        "asama": [
+          "teslim"
+        ]
+      },
+      "metin": "API anahtarların nerede duruyor? Tarayıcıya giden kodda görünüyorlar mı?",
+      "evetSonuc": "Anahtarlar sunucuda ya da ortam değişkeninde, tarayıcıya gitmiyor.",
+      "hayirRisk": "API anahtarı tarayıcıya giden kodda olabilir.",
+      "secenekler": [
+        "Evet",
+        "Hayır",
+        "Emin değilim"
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "Y-01",
+      "konu": "dagitim",
+      "tur": "karar",
+      "tetik": {
+        "asama": [
+          "test",
+          "teslim"
+        ],
+        "degisiklik": [
+          "yayinaAldim"
+        ]
+      },
+      "metin": "Teslimden bir gün önce {proje} projesinde küçük bir değişiklik yaptın. Nasıl yayına alırsın?",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Önce ayrı bir test ortamında denerim, önceki sürüme dönüş yolumu hazırlarım",
+          "risk": "dusuk",
+          "sonuc": "Test ortamında bir ekranın kaydığını gördün. Canlıya düzeltilmiş hâli gitti.",
+          "neden": "Geri dönüş planı olan bir yayın geri alınabilir bir karardır. Olmayan bir yayın ise kumardır."
+        },
+        {
+          "id": "B",
+          "metin": "Küçük bir değişiklik, doğrudan canlıya alırım",
+          "risk": "yuksek",
+          "sonuc": "Değişiklik giriş ekranını bozdu. Önceki sürümün nerede olduğunu bulman 40 dakika sürdü.",
+          "neden": "'Küçük değişiklik' etkisinin küçük olduğu anlamına gelmez. Etki ancak denenerek görülür."
+        }
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "Y-02",
+      "konu": "dagitim",
+      "tur": "kontrol",
+      "tetik": {
+        "asama": [
+          "test",
+          "teslim"
+        ]
+      },
+      "metin": "Bir şey bozulursa önceki çalışan sürüme 5 dakikada dönebilir misin?",
+      "evetSonuc": "Geri dönüş yolun hazır.",
+      "hayirRisk": "Önceki sürüme hızlı dönüş yolu yok.",
+      "secenekler": [
+        "Evet",
+        "Hayır",
+        "Emin değilim"
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "R-01",
+      "konu": "rapor",
+      "tur": "kontrol",
+      "tetik": {
+        "asama": [
+          "kodlama",
+          "test",
+          "teslim"
+        ]
+      },
+      "metin": "README'nde kurulum adımları var mı? Projeyi hiç görmemiş biri 10 dakikada çalıştırabilir mi?",
+      "evetSonuc": "Proje başkası tarafından çalıştırılabilir durumda.",
+      "hayirRisk": "README kurulum adımlarını içermiyor.",
+      "secenekler": [
+        "Evet",
+        "Hayır",
+        "Emin değilim"
+      ],
+      "gerekceAlani": true
+    },
+    {
+      "id": "R-02",
+      "konu": "rapor",
+      "tur": "karar",
+      "tetik": {
+        "her": true
+      },
+      "metin": "{proje} projesinde verdiğin teknik kararları ve nedenlerini nereye yazıyorsun?",
+      "beklenen": "Bir karar ve en az bir gerekçe. Bu cevap proje karnesindeki karar kaydına eklenir.",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Kısa bir karar kaydına (README'de bir bölüm ya da docs/kararlar.md) yazıyorum",
+          "risk": "dusuk",
+          "sonuc": "Rapor yazarken iki hafta önceki bir kararın nedenini bulman 1 dakika sürdü.",
+          "neden": "Karar kaydı, “neden böyle yaptık?” sorusunun cevabını ekipten biri ayrıldığında bile korur."
+        },
+        {
+          "id": "B",
+          "metin": "Commit mesajlarında geçiyor",
+          "risk": "orta",
+          "sonuc": "Ne yaptığın kayıtlı ama nedenini bulmak için yüzlerce commit'i okuman gerekti.",
+          "neden": "Commit mesajı neyin değiştiğini anlatır. Bir kararın gerekçesi ve elenen seçenekler için ayrı bir yer gerekir."
+        },
+        {
+          "id": "C",
+          "metin": "Aklımda tutuyorum",
+          "risk": "yuksek",
+          "sonuc": "Raporu yazarken bir mimari kararı neden verdiğini hatırlayamadın ve tahminle yazdın.",
+          "neden": "Toplantıda ya da kafanda kalan bağlam kaybolur. Yapay zekâ çağında bağlamın yazılı olması gerekir."
+        }
+      ],
+      "notAlani": "Bu haftanın en önemli kararını bir cümleyle yaz (isteğe bağlı, karar kaydına eklenir)",
+      "gerekceAlani": true
+    },
+    {
+      "id": "R-03",
+      "konu": "rapor",
+      "tur": "karar",
+      "tetik": {
+        "degisiklik": [
+          "hataCikti"
+        ]
+      },
+      "metin": "{proje} projesinde bir hata çıktı ve düzelttin. Sonra ne yaparsın?",
+      "secenekler": [
+        {
+          "id": "A",
+          "metin": "Kök nedeni ve önlemi kısa bir nota yazarım, aynı hatayı yakalayacak bir test eklerim",
+          "risk": "dusuk",
+          "sonuc": "İki hafta sonra benzer bir değişiklikte o test kırmızıya döndü ve hata canlıya çıkmadı.",
+          "neden": "Düzeltilen hata, testi yazılmadıkça tekrar gelebilir. Not ise aynı tuzağı ekibin geri kalanına gösterir."
+        },
+        {
+          "id": "B",
+          "metin": "Düzeldi, devam ederim",
+          "risk": "orta",
+          "sonuc": "İki hafta sonra aynı hata başka bir ekranda geri geldi ve kök nedeni yeniden aradın.",
+          "neden": "Kayda geçmeyen bilgi ekibin değil, yalnızca o anki kişinin hafızasında kalır."
+        }
+      ],
+      "gerekceAlani": true
+    }
+  ]
+}

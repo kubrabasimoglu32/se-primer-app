@@ -1,0 +1,195 @@
+---
+name: Tome & Terminal
+colors:
+  surface: '#f9f9f8'
+  surface-dim: '#dadad9'
+  surface-bright: '#f9f9f8'
+  surface-container-lowest: '#ffffff'
+  surface-container-low: '#f3f4f3'
+  surface-container: '#eeeeed'
+  surface-container-high: '#e8e8e7'
+  surface-container-highest: '#e2e2e2'
+  on-surface: '#1a1c1c'
+  on-surface-variant: '#45464d'
+  inverse-surface: '#2f3130'
+  inverse-on-surface: '#f1f1f0'
+  outline: '#76777d'
+  outline-variant: '#c6c6cd'
+  surface-tint: '#565e74'
+  primary: '#000000'
+  on-primary: '#ffffff'
+  primary-container: '#131b2e'
+  on-primary-container: '#7c839b'
+  inverse-primary: '#bec6e0'
+  secondary: '#515f74'
+  on-secondary: '#ffffff'
+  secondary-container: '#d5e3fd'
+  on-secondary-container: '#57657b'
+  tertiary: '#000000'
+  on-tertiary: '#ffffff'
+  tertiary-container: '#2f1500'
+  on-tertiary-container: '#c76c00'
+  error: '#ba1a1a'
+  on-error: '#ffffff'
+  error-container: '#ffdad6'
+  on-error-container: '#93000a'
+  primary-fixed: '#dae2fd'
+  primary-fixed-dim: '#bec6e0'
+  on-primary-fixed: '#131b2e'
+  on-primary-fixed-variant: '#3f465c'
+  secondary-fixed: '#d5e3fd'
+  secondary-fixed-dim: '#b9c7e0'
+  on-secondary-fixed: '#0d1c2f'
+  on-secondary-fixed-variant: '#3a485c'
+  tertiary-fixed: '#ffdcc3'
+  tertiary-fixed-dim: '#ffb77d'
+  on-tertiary-fixed: '#2f1500'
+  on-tertiary-fixed-variant: '#6e3900'
+  background: '#f9f9f8'
+  on-background: '#1a1c1c'
+  surface-variant: '#e2e2e2'
+typography:
+  headline-xl:
+    fontFamily: Merriweather
+    fontSize: 30px
+    fontWeight: '700'
+    lineHeight: 38px
+    letterSpacing: -0.02em
+  headline-lg:
+    fontFamily: Merriweather
+    fontSize: 24px
+    fontWeight: '700'
+    lineHeight: 32px
+    letterSpacing: -0.015em
+  headline-md:
+    fontFamily: Merriweather
+    fontSize: 20px
+    fontWeight: '400'
+    lineHeight: 28px
+  headline-sm:
+    fontFamily: Merriweather
+    fontSize: 18px
+    fontWeight: '700'
+    lineHeight: 26px
+  body-lg:
+    fontFamily: Inter
+    fontSize: 16px
+    fontWeight: '400'
+    lineHeight: 26px
+  body-md:
+    fontFamily: Inter
+    fontSize: 14px
+    fontWeight: '400'
+    lineHeight: 22px
+  body-sm:
+    fontFamily: Inter
+    fontSize: 12px
+    fontWeight: '400'
+    lineHeight: 18px
+  code-md:
+    fontFamily: JetBrains Mono
+    fontSize: 13px
+    fontWeight: '400'
+    lineHeight: 20px
+  code-sm:
+    fontFamily: JetBrains Mono
+    fontSize: 11px
+    fontWeight: '500'
+    lineHeight: 16px
+  label-md:
+    fontFamily: JetBrains Mono
+    fontSize: 12px
+    fontWeight: '600'
+    lineHeight: 16px
+    letterSpacing: 0.04em
+  label-sm:
+    fontFamily: JetBrains Mono
+    fontSize: 10px
+    fontWeight: '600'
+    lineHeight: 14px
+    letterSpacing: 0.06em
+rounded:
+  sm: 0.125rem
+  DEFAULT: 0.25rem
+  md: 0.375rem
+  lg: 0.5rem
+  xl: 0.75rem
+  full: 9999px
+spacing:
+  gutter: 1rem
+  margin: 1.25rem
+  space-xs: 0.25rem
+  space-sm: 0.5rem
+  space-md: 1rem
+  space-lg: 1.5rem
+  space-xl: 2.25rem
+---
+
+## Brand & Style
+The design system establishes a hybrid aesthetic: the gravitas and intellectual calm of an engineering reference manual fused with the refined precision of an IDE. Created for software engineers studying complex computer science concepts, system architecture, and patterns on mobile interfaces, the experience avoids gamified dopamine traps in favor of focus, legibility, and quiet authority.
+
+Key attributes:
+- **Scholarly Tactility:** Emulates premium archival paper, editorial layout standards, and deliberate typographical hierarchy.
+- **Architectural Rigor:** UI patterns prioritize structured technical diagrams, clear step progressions, and readable code blocks.
+- **Tone:** Academic, focused, dependable, and warm. It feels like an annotated engineer's handbook bound in deep calfskin and viewed through modern optics.
+
+## Colors
+The palette evokes archival ink printed on tactile warm parchment. 
+
+- **Primary (`#0F172A`):** Deep ink navy, providing authoritative contrast for primary titles, structural frames, and solid action buttons.
+- **Secondary (`#334155`):** Slate ink, utilized for metadata, secondary actions, and subtle structural outlines.
+- **Tertiary / Warning (`#D97706`):** Warm amber accent, signifying review items, compilation warnings, and active stepping states.
+- **Neutral Canvas (`#FBFBFA`):** Warm parchment white that prevents ocular fatigue during extended reading sessions. Card surfaces lift off this base in `#FFFFFF` with muted slate dividing rules (`#E2E8F0`).
+- **Semantic Feedback:**
+  - **Success:** `#16A34A` (Veracity, passing tests, resolved modules).
+  - **Critical / Error:** `#DC2626` (Failing test cases, breaking changes, critical alerts).
+
+## Typography
+Typographic rhythm balances editorial exposition with terminal density:
+
+- **Headlines (Merriweather):** Ground the reading experience in classic textbook typography. Headlines employ tighter negative letter-spacing to present an authoritative cadence.
+- **Body & Prose (Inter):** Highly legible, neutral sans-serif calculated for rapid comprehension on 390px mobile screens, especially for extended technical prose and system descriptions.
+- **Metadata, Step Indices & Code (JetBrains Mono):** Provides fixed-width precision for directory trees, algorithmic snippets, token pills, and chapter indices. Always rendered with clear character differentiation (`0` vs `O`, `l` vs `1`).
+
+## Layout & Spacing
+Designed from an intrinsic mobile viewport (~390px width) scaling into wider viewpoints:
+
+- **Grid Architecture:** Single-column layout on mobile with an outer margin of `1.25rem` (20px) and element gutters of `1rem` (16px).
+- **Vertical Cadence:** Strict 4px base baseline unit. Section blocks and chapter transitions separate with `space-xl` (36px). Component internals (card padding, list item stacks) utilize `space-md` (16px).
+- **Code & Tree Blocks:** Contain their own horizontal scroll plane with negative margins aligning flush with the parent card boundary or pinned inside padded frames with `space-sm` internal padding.
+
+## Elevation & Depth
+Depth relies on flat tactile layering rather than dramatic drop shadows:
+
+- **Low-Contrast Outlines:** Surfaces are primarily articulated by delicate `1px` structural borders in `#E2E8F0` on white cards.
+- **Tonal Layering:** The primary canvas sits at `#FBFBFA`. Content cards elevate directly above it in `#FFFFFF`. Monospace terminal blocks and interactive playground trays set into cards use an inset tone of `#F1F5F9` or contrast sharply in `#0F172A` with ink-white text.
+- **Shadow Behavior:** Floating action buttons and active modal sheets employ an ultra-diffused, ambient ink tint: `0 4px 20px -2px rgba(15, 23, 42, 0.06)`. No heavy or hard-edged blurred shadows.
+
+## Shapes
+The system utilizes subtle, restrained curvature (`roundedness: 1`):
+- **Base Components:** 4px (`0.25rem`) border radius on standard buttons, code blocks, and input fields to sustain the feel of book-plate margins and physical technical tools.
+- **Containers & Cards:** 8px (`0.5rem`) on parent study cards, exercise modules, and bottom sheet containers.
+- **Status Pills & Chips:** Micro tags keep slightly squared 4px corners rather than fluid pills to reinforce structural discipline.
+
+## Components
+
+### Buttons & Interactive Controls
+- **Primary Button:** `#0F172A` fill with `#FFFFFF` text. Monospace or semi-bold sans font. Flat baseline with a `1px` outline in `#0F172A`. Active state darkens to `#000000`.
+- **Secondary Button:** Surface in `#FFFFFF` with a `1px` border of `#E2E8F0` and `#0F172A` label.
+- **Terminal Action:** Bordered monochrome button featuring monospace command prompts (e.g., `$ run test`).
+
+### Cards & Modules
+- **Study Concept Card:** Solid `#FFFFFF` background, `1px solid #E2E8F0` contour, 8px corner radius. Features a distinct top header dividing rule separating the chapter identifier (`label-sm`) from the body.
+- **Code Card:** Embedded inside study cards or standalone with `#0F172A` surface, JetBrains Mono body, syntax-highlighted accents in amber (`#F59E0B`), emerald (`#10B981`), and soft sky blue (`#38BDF8`).
+
+### Selection Chips & Tags
+- **Concept Chips:** Subtly tinted background (`#F1F5F9`), bordered with `#CBD5E1`. On selection, changes to `#0F172A` fill with stark white typography.
+- **State Tags:** Distinct `1px` hairline badges (e.g., `PASS`, `WARN`, `DIFF`) using JetBrains Mono uppercase labels at 10px.
+
+### Step Indicators & Architecture Nodes
+- **Step Sequencer:** Clean vertical rule running through numbered nodes (`01`, `02`, `03`) set in `label-sm`. Completed nodes feature a green checkmark or solid `#0F172A` fill; current node highlights in amber (`#D97706`).
+- **Hierarchy Trees:** Monospaced ASCII-inspired branching lines (`├──`, `└──`) paired with interactive collapsible directory rows.
+
+### Form Inputs & Code Input Fields
+- **Monospace Textarea / Snippet Entry:** Off-white `#F8FAFC` input background with an inset border `#E2E8F0`. Focus state shifts the border to `#0F172A` with an ambient `1px` focus ring.
+- **Checkboxes & Radios:** Sharp, architectural square boxes with precise 2px inner padding; checked state displays a crisp high-contrast check icon.
