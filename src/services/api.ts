@@ -152,7 +152,12 @@ export async function tutorCevapAl(params: {
   kart: ProjeKarti;
   soru: SecilmisSoru;
   ogrenciGirdisi: string;
-}): Promise<{ yanit: string; degerlendirme?: "yeterli" | "kismen" | "eksik" }> {
+}): Promise<{
+  yanit: string;
+  degerlendirme?: "yeterli" | "kismen" | "eksik";
+  kaynak: "model" | "yedek";
+  hata?: string;
+}> {
   // Girdi ve kartı maskele
   const maskeleSonuc = maskele(params.ogrenciGirdisi);
   const { temizObj: maskeliKart, toplamMaskelenen: kartMaskelenen } = maskeleNesne(params.kart);
@@ -202,8 +207,10 @@ export async function tutorCevapAl(params: {
     return {
       yanit: filtrele(data.yanit || "Bu kararı kendi projenin ölçeğine göre vermen gerekiyor. Hangi ödünleşimi göze alıyorsun?"),
       degerlendirme: data.degerlendirme,
+      kaynak: data.kaynak || (data.hata ? "yedek" : "model"),
+      hata: data.hata,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.warn("POST /api/tutor çağrısı başarısız oldu, yerel Sokratik yanıt kullanılıyor:", error);
     const yedek = params.mod === "degerlendir"
       ? "Gerekçeniz proje bağlamı için önemli. Bu seçimin getirdiği potansiyel darboğazı nasıl aşmayı planlıyorsunuz?"
@@ -211,6 +218,8 @@ export async function tutorCevapAl(params: {
     return {
       yanit: filtrele(yedek),
       degerlendirme: params.mod === "degerlendir" ? "kismen" : undefined,
+      kaynak: "yedek",
+      hata: error?.message || "Sunucu bağlantı hatası",
     };
   }
 }

@@ -21,18 +21,36 @@ async function startServer() {
 
   app.use(express.json());
 
-  // Shared Gemini client initialization (User-Agent header required by skill)
+// Shared Gemini client initialization (User-Agent header required by skill)
+function getGenAI(): GoogleGenAI | null {
   const apiKey = process.env.GEMINI_API_KEY;
-  const ai = apiKey
-    ? new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            "User-Agent": "aistudio-build",
-          },
-        },
-      })
-    : null;
+  if (!apiKey) return null;
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        "User-Agent": "aistudio-build",
+      },
+    },
+  });
+}
+
+function formatGeminiError(error: any): string {
+  const msg = error?.message || String(error);
+  if (msg.includes("free tier is not available")) {
+    return "403: Proje için Gemini API ücretsiz katmanı kullanılamıyor (Ücretli/Faturalandırma katmanı gerekiyor)";
+  }
+  if (msg.includes("PERMISSION_DENIED")) {
+    return "403: İzin reddedildi (Yetkisiz API anahtarı)";
+  }
+  if (msg.includes("RESOURCE_EXHAUSTED") || msg.includes("429")) {
+    return "429: API kotası tükendi";
+  }
+  if (msg.includes("NOT_FOUND") || msg.includes("404")) {
+    return "404: Belirtilen model bulunamadı";
+  }
+  return msg.length > 90 ? msg.slice(0, 90) + "..." : msg;
+}
 
   /**
    * POST /api/kart
@@ -43,6 +61,7 @@ async function startServer() {
    */
   app.post("/api/kart", async (req, res) => {
     const input = req.body || {};
+    const ai = getGenAI();
 
     if (!ai) {
       console.warn("GEMINI_API_KEY bulunamadı, yerel varsayılanlar döndürülüyor.");
@@ -88,7 +107,7 @@ KURALLAR:
 4. acikRiskler: Verilen bilgilere göre projenin aşaması ve teknolojisine dair en kritik 2 veya 3 mimari/güvenlik riskini Türkçe birer cümleyle listele.`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: "gemini-flash-latest",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -158,6 +177,7 @@ KURALLAR:
       return res.status(400).json({ error: "Soru verisi eksik" });
     }
 
+    const ai = getGenAI();
     if (!ai || !kart) {
       console.warn("Gemini veya proje kartı mevcut değil, orijinal soru kullanılıyor.");
       return res.json(soru);
@@ -193,7 +213,7 @@ ${JSON.stringify(soru, null, 2)}
 
       if (isKarar) {
         response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-flash-latest",
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -227,7 +247,7 @@ ${JSON.stringify(soru, null, 2)}
       } else {
         // Kontrol sorusu
         response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-flash-latest",
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -335,6 +355,7 @@ ${JSON.stringify(soru, null, 2)}
 
     const ipucuSorusu = soru.ipucu || "Bu tercihin sistemin uzun vadeli güvenliği ve bakımı üzerindeki etkisini düşünür müsün?";
 
+    const ai = getGenAI();
     // Gemini mevcut değilse güvenli yerel fallback
     if (!ai) {
       const guvenliYanit = savunmaKatmani(
@@ -347,6 +368,8 @@ ${JSON.stringify(soru, null, 2)}
       return res.json({
         yanit: guvenliYanit,
         degerlendirme: mod === "degerlendir" ? "kismen" : undefined,
+        kaynak: "yedek",
+        hata: "GEMINI_API_KEY tanımlı değil",
       });
     }
 
@@ -381,7 +404,7 @@ GÖREV:
 JSON olarak 'yanit' (en fazla 2 kısa cümle + 1 soru, 60 kelimeyi geçme) ve 'degerlendirme' ('yeterli' | 'kismen' | 'eksik') döndür.`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-flash-latest",
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -405,6 +428,7 @@ JSON olarak 'yanit' (en fazla 2 kısa cümle + 1 soru, 60 kelimeyi geçme) ve 'd
         return res.json({
           yanit: temizYanit,
           degerlendirme: parsed.degerlendirme || "kismen",
+          kaynak: "model",
         });
       } else {
         // mod === "soru_sor" ("Primer'e sor" alanı)
@@ -432,7 +456,7 @@ GÖREV:
 Öğrenciye doğrudan cevabı vermeden, kendi projesindeki kısıtları düşünmesini sağlayacak Sokratik bir yanıt yaz (en fazla 2 kısa cümle ve 1 soru).`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-flash-latest",
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -451,10 +475,12 @@ GÖREV:
 
         return res.json({
           yanit: temizYanit,
+          kaynak: "model",
         });
       }
-    } catch (error) {
-      console.warn("POST /api/tutor hatası:", error);
+    } catch (error: any) {
+      const hataAciklamasi = formatGeminiError(error);
+      console.warn("POST /api/tutor Gemini hatası:", hataAciklamasi);
       const temizYanit = savunmaKatmani(
         mod === "degerlendir"
           ? "Gerekçeniz incelendi. Bu tercihin oluşturabileceği ek yükleri nasıl hafifletmeyi planlıyorsunuz?"
@@ -464,6 +490,8 @@ GÖREV:
       return res.json({
         yanit: temizYanit,
         degerlendirme: mod === "degerlendir" ? "kismen" : undefined,
+        kaynak: "yedek",
+        hata: hataAciklamasi,
       });
     }
   });

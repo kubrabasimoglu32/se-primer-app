@@ -22,6 +22,7 @@ import { loadProje, saveProje, clearProje, ORNEK_PROJE } from "./services/storag
 import { konuSec } from "./primer/konuSec";
 import { analizEtVeKartOlustur, sorulariUyarla } from "./services/api";
 import { onMaskelemeBildirimi } from "./primer/maskele";
+import { EvalScreen } from "./components/EvalScreen";
 
 type Ekran = "tanisma" | "nedegisti" | "soru" | "projem";
 
@@ -35,6 +36,24 @@ export default function App() {
   const [hazirlaniyor, setHazirlaniyor] = useState<boolean>(false);
   const [hazirlaniyorMesaji, setHazirlaniyorMesaji] = useState<string>("Proje analizi yapılıyor...");
   const [maskelemeBildirimi, setMaskelemeBildirimi] = useState<string | null>(null);
+
+  // Gizli eval modu kontrolü (?eval=1)
+  const [isEvalMode, setIsEvalMode] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("eval") === "1";
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      setIsEvalMode(params.get("eval") === "1");
+    };
+    window.addEventListener("popstate", handleLocationChange);
+    return () => window.removeEventListener("popstate", handleLocationChange);
+  }, []);
 
   // Maskeleme bildirim dinleyicisi
   useEffect(() => {
@@ -248,6 +267,21 @@ export default function App() {
     setAktifSorular([]);
     setEkran("tanisma");
   };
+
+  if (isEvalMode) {
+    return (
+      <EvalScreen
+        onCikis={() => {
+          if (typeof window !== "undefined") {
+            const u = new URL(window.location.href);
+            u.searchParams.delete("eval");
+            window.history.pushState({}, "", u.toString());
+            setIsEvalMode(false);
+          }
+        }}
+      />
+    );
+  }
 
   if (!yuklendi) {
     return (

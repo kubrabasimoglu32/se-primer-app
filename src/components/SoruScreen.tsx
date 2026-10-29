@@ -68,6 +68,31 @@ interface SoruCevapDurumu {
   primerYaniti?: string;
 }
 
+// Karar sorularında seçeneklerin sırasını karıştır (iyi seçenek hep A olmasın)
+function karistirKararSecenekleri(soruListesi: SecilmisSoru[]): SecilmisSoru[] {
+  const harfler: ("A" | "B" | "C")[] = ["A", "B", "C"];
+  return (soruListesi || []).map((soru) => {
+    if (soru.tur === "karar" && Array.isArray(soru.secenekler) && soru.secenekler.length > 1) {
+      const kopya = [...(soru.secenekler as BankSoruSecenek[])];
+      // Fisher-Yates karıştırma algoritması
+      for (let i = kopya.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [kopya[i], kopya[j]] = [kopya[j], kopya[i]];
+      }
+      // Karışık seçeneklere sırasıyla A, B, C id ve etiketlerini ver
+      const karistirilmis: BankSoruSecenek[] = kopya.map((sec, idx) => ({
+        ...sec,
+        id: harfler[idx] || sec.id,
+      }));
+      return {
+        ...soru,
+        secenekler: karistirilmis,
+      };
+    }
+    return soru;
+  });
+}
+
 export const SoruScreen: React.FC<SoruScreenProps> = ({
   kart,
   sorular,
@@ -75,6 +100,15 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
   mevcutAcikRiskSayisi,
   onOturumTamamla,
 }) => {
+  // Karar sorularında seçeneklerin her soruda karışık gelmesi
+  const [calismaSorulari, setCalismaSorulari] = useState<SecilmisSoru[]>(() =>
+    karistirKararSecenekleri(sorular)
+  );
+
+  useEffect(() => {
+    setCalismaSorulari(karistirKararSecenekleri(sorular));
+  }, [sorular]);
+
   const [aktifSoruIndeks, setAktifSoruIndeks] = useState<number>(0);
   const [cevaplar, setCevaplar] = useState<Record<number, SoruCevapDurumu>>({});
   const [gerekceGirdisi, setGerekceGirdisi] = useState<string>("");
@@ -93,8 +127,9 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
   const isDeneyimli = Boolean(kart?.seviye && kart.seviye.toLowerCase().includes("deneyim"));
   const [ipucuAcik, setIpucuAcik] = useState<boolean>(!isDeneyimli);
 
-  const aktifSoru: SecilmisSoru = sorular[aktifSoruIndeks];
-  const toplamSoru = sorular.length; // 3 soru
+  const aktifSoru: SecilmisSoru =
+    calismaSorulari[aktifSoruIndeks] || sorular[aktifSoruIndeks];
+  const toplamSoru = calismaSorulari.length || sorular.length; // 3 soru
   const mevcutCevap = cevaplar[aktifSoruIndeks];
 
   // Soru değiştiğinde ipucu durumunu seviyeye göre sıfırla
@@ -346,7 +381,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
   const tumunuTamamla = () => {
     let genelOturumNotu: string | undefined = undefined;
 
-    const soruCevaplar: SoruCevap[] = sorular.map((s, idx) => {
+    const soruCevaplar: SoruCevap[] = calismaSorulari.map((s, idx) => {
       const c = cevaplar[idx];
       if (s.notAlani && c?.kararNotu) {
         genelOturumNotu = c.kararNotu;
@@ -379,7 +414,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
     const kapatilanRiskler: string[] = [];
     let buOturumdaYuksekRiskVar = false;
 
-    sorular.forEach((s, idx) => {
+    calismaSorulari.forEach((s, idx) => {
       const c = cevaplar[idx];
       if (!c) return;
 
@@ -436,7 +471,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
 
         {/* 3 Step Indicator Nodes */}
         <div className="grid grid-cols-3 gap-2">
-          {sorular.map((s, idx) => {
+          {calismaSorulari.map((s, idx) => {
             const tamamlandi = idx < aktifSoruIndeks || (idx === aktifSoruIndeks && cevaplandi);
             const suanki = idx === aktifSoruIndeks;
 
@@ -564,6 +599,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
                   key={secenek.id}
                   onClick={() => handleKararSecenekSec(secenek.id)}
                   data-cy={dataCy}
+                  data-risk={secenek.risk}
                   className={`cursor-pointer rounded border transition-all p-3 text-left relative ${
                     secili
                       ? "bg-[#0F172A] text-[#FFFFFF] border-[#0F172A] shadow-md ring-2 ring-[#0F172A]/20"
@@ -647,6 +683,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
               <button
                 type="button"
                 data-cy="secenek-A"
+                data-risk="dusuk"
                 onClick={() => handleKontrolSecenekSec("A")}
                 className={`p-2.5 rounded border text-center transition-all ${
                   mevcutCevap?.secilenId === "A"
@@ -662,15 +699,13 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
                   />
                   <span>Evet</span>
                 </div>
-                <span className={`block text-[10px] mt-0.5 ${mevcutCevap?.secilenId === "A" ? "text-white/80" : "text-[#515F74]"}`}>
-                  Hazır (+1)
-                </span>
               </button>
 
               {/* Düğme 2: Hayır (B) */}
               <button
                 type="button"
                 data-cy="secenek-B"
+                data-risk="yuksek"
                 onClick={() => handleKontrolSecenekSec("B")}
                 className={`p-2.5 rounded border text-center transition-all ${
                   mevcutCevap?.secilenId === "B"
@@ -686,15 +721,13 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
                   />
                   <span>Hayır</span>
                 </div>
-                <span className={`block text-[10px] mt-0.5 ${mevcutCevap?.secilenId === "B" ? "text-white/80" : "text-[#515F74]"}`}>
-                  Riskli (0)
-                </span>
               </button>
 
               {/* Düğme 3: Emin değilim (C) */}
               <button
                 type="button"
                 data-cy="secenek-C"
+                data-risk="orta"
                 onClick={() => handleKontrolSecenekSec("C")}
                 className={`p-2.5 rounded border text-center transition-all ${
                   mevcutCevap?.secilenId === "C"
@@ -710,34 +743,54 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
                   />
                   <span>Emin değilim</span>
                 </div>
-                <span className={`block text-[10px] mt-0.5 ${mevcutCevap?.secilenId === "C" ? "text-white/80" : "text-[#515F74]"}`}>
-                  Riskli (0)
-                </span>
               </button>
             </div>
 
             {/* Kontrol Sonucu Kartı */}
             {cevaplandi && mevcutCevap?.sonucMetni && (
               <div
-                className={`p-3 rounded text-xs border animate-fadeIn ${
+                className={`p-3 rounded text-xs border animate-fadeIn space-y-2 ${
                   mevcutCevap.secilenId === "A"
                     ? "bg-[#F0FDF4] border-[#86EFAC] text-[#166534]"
                     : "bg-[#FFFBEB] border-[#FCD34D] text-[#92400E]"
                 }`}
               >
-                <div className="flex items-center justify-between font-mono text-[10px] font-bold uppercase mb-1">
-                  <span>
-                    DURUM: {mevcutCevap.secilenId === "A" ? "KONTROL EDİLDİ" : "AÇIK RİSK EKLENDİ"}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-[10px] font-mono uppercase font-bold">RİSK DERECESİ:</span>
+                    <span
+                      className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded ${
+                        mevcutCevap.secilenId === "A"
+                          ? "bg-[#16A34A] text-[#FFFFFF]"
+                          : "bg-[#DC2626] text-[#FFFFFF]"
+                      }`}
+                    >
+                      {mevcutCevap.secilenId === "A" ? "DÜŞÜK RİSK" : "YÜKSEK RİSK"}
+                    </span>
+                  </div>
+                  <span className="font-mono text-[10px] font-bold">
+                    {mevcutCevap.secilenId === "A" ? "+1 Puan" : "0 Puan"}
                   </span>
-                  <span>{mevcutCevap.secilenId === "A" ? "+1 Puan" : "0 Puan"}</span>
                 </div>
-                <p className="text-xs leading-relaxed font-medium">
-                  {mevcutCevap.sonucMetni}
-                </p>
-                {mevcutCevap.nedenMetni && (
-                  <p className="text-[11px] mt-1 opacity-90">
-                    {mevcutCevap.nedenMetni}
+
+                <div className="bg-white/60 p-2 rounded border border-current/10">
+                  <span className="font-mono text-[10px] block uppercase font-bold">
+                    NE OLUR:
+                  </span>
+                  <p className="text-xs mt-0.5 leading-relaxed font-medium">
+                    {mevcutCevap.sonucMetni}
                   </p>
+                </div>
+
+                {mevcutCevap.nedenMetni && (
+                  <div className="bg-white/60 p-2 rounded border border-current/10">
+                    <span className="font-mono text-[10px] block uppercase font-bold">
+                      NEDEN:
+                    </span>
+                    <p className="text-xs mt-0.5 leading-relaxed">
+                      {mevcutCevap.nedenMetni}
+                    </p>
+                  </div>
                 )}
               </div>
             )}
