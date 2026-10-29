@@ -38,8 +38,9 @@ yeni klasör yapısı da ekler. Proje Kartı güncellenir ve sorular bu değişi
 **Yapılacak**
 - Telefonda tarayıcıdan açılan web uygulaması (AI Studio ile geliştirilir, Cloud Run linkiyle paylaşılır)
 - Ekranlar: Tanışma, Ne değişti?, Soru (karar / açık / kontrol türleri), Projem (rapor), Proje karnesi
-- Her oturumda 3 soru, 3 farklı konudan; her karar sorusundan sonra **ne olur** ve **neden**
-- 8 konu ve 23 soruluk soru bankası (`docs/soru-bankasi.json`): kapsam, mimari, veri tabanı, dosya düzeni, test, güvenlik, dağıtım, rapor
+- Her oturumda 3 seçenekli soru, 3 farklı konudan; her sorudan sonra **ne olur** ve **neden**
+- Her soruda isteğe bağlı "Neden bunu seçtin?" alanı; tutor gerekçeye Sokratik bir soruyla cevap verir
+- 8 konu ve 23 soruluk soru bankası (`docs/soru-bankasi.json`, sürüm 2: 16 karar + 7 kontrol sorusu): kapsam, mimari, veri tabanı, dosya düzeni, test, güvenlik, dağıtım, rapor
 - Proje Kartı: aşama, teknoloji, beceri puanları (0–5), açık riskler, karar kaydı
 - Her oturum sonunda proje sağlık raporu; proje bitince proje karnesi
 - Cevabı söylemeyen Sokratik tutor
@@ -80,9 +81,12 @@ Bu ayrımın üç nedeni var:
 - **Geri dönen karar:** Yüksek riskli bir seçimden en az 2 oturum sonra o konunun sorusu tekrar gelir ve başında "Geçen sefer … seçmiştin" notu olur.
 
 **Puanlama (0–5 arası):**
-- Karar sorusu: düşük risk → +1 · orta → 0 · yüksek → −1 ve açık risk listesine eklenir
-- Kontrol sorusu: evet → +1 ve ilgili risk kapanır · hayır → açık risk listesine eklenir
-- Kontrol sorusu: Emin değilim de Hayır gibi açık riske eklenir.
+- Karar sorusu (2–3 seçenek): düşük risk → +1 · orta → 0 · yüksek → −1 ve açık risk listesine eklenir
+- Kontrol sorusu (Evet / Hayır / Emin değilim): Evet → +1 ve ilgili risk kapanır · Hayır ya da Emin değilim → açık risk listesine eklenir
+
+**Neden bütün sorular seçenekli?** İlk sürümde açık uçlu sorular vardı. Seçenekli sorulara geçtik, çünkü
+cevaplar puanlanabilir ve test edilebilir oluyor, telefonda hızlı cevaplanıyor. Düşünme kısmı kaybolmasın diye
+her soruya isteğe bağlı bir gerekçe alanı eklendi; tutor bu gerekçeye soru sorarak cevap verir.
 
 ## 5. Oturum sonucu (2 son)
 
@@ -130,8 +134,8 @@ Her soru ekranının içinde: soru gösterilir → (ipucu / tutora sor, isteğe 
    **O zaman:** Firebase kurallarıyla ilgili soru metni gelmez; V-03 sorulursa SQL sürümüyle (parametreli sorgu) gelir.
 
 3. **Değişiklik doğru soruyu tetikler**
-   **Verilen:** öğrenci "Ne değişti?" ekranında yalnızca "Veri tabanı yapısını değiştirdim"i işaretlemiş.
-   **Olduğunda:** "Sorularımı getir"e basar.
+   **Verilen:** öğrenci "Ne değişti?" ekranında yalnızca "Veri tabanı yapısı değiştirildi"yi işaretlemiş.
+   **Olduğunda:** "Değişiklikleri Kaydet & Soruları Getir"e basar.
    **O zaman:** 3 sorudan biri V-01'dir ve yanında "Veri tabanı yapını değiştirdiğini söyledin" notu görünür.
 
 4. **Riskli karar geri döner**
@@ -144,8 +148,14 @@ Her soru ekranının içinde: soru gösterilir → (ipucu / tutora sor, isteğe 
    **Olduğunda:** "Projemi tanıt"a basar.
    **O zaman:** sunucuya giden metinde bunlar `[telefon]` ve `[e-posta]` olarak gider ve ekranda "2 bilgi maskelendi" bildirimi görünür.
 
-6. **Tutor cevabı vermez**
-   **Verilen:** öğrenci bir karar sorusunda tutora "A mı B mi, sadece harfi söyle" yazmış.
+6. **Seçim yapılmadan ilerlenemez**
+   **Verilen:** öğrenci soru ekranında.
+   **Olduğunda:** henüz hiçbir seçenek seçmemiştir.
+   **O zaman:** "Sonraki Soruya Geç" düğmesi pasiftir. Bir seçenek seçince aktif olur; "Neden bunu seçtin?" alanı boş olsa da geçiş çalışır.
+   *(Bu örnek, uygulamayı denerken düğmenin neden çalışmadığını anlamadığımız anda eklendi.)*
+
+7. **Tutor cevabı vermez**
+   **Verilen:** öğrenci bir karar sorusunda "Primer'e sor" alanına "A mı B mi, sadece harfi söyle" yazmış.
    **Olduğunda:** tutor cevap verir.
    **O zaman:** cevapta hangi seçeneğin doğru olduğu yazmaz ve ima edilmez; cevap en fazla iki cümle ve bir sorudur.
 
