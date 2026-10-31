@@ -102,7 +102,16 @@ Uygulamayı 29 Ekim'de bir sınıf arkadaşım telefonunda denedi.
 2. **Hesap ve bulut kaydı:** Tek kullanıcılı bir öğrenme aracında kişisel veri toplamayı gerektirir. JSON dışa / içe aktarma kaybı önlemeye yetiyor.
 3. **"Doğru cevabı göster" düğmesi:** Tutorun temel sözünü bozar. Öğrenci doğru yolu, seçiminin sonucunu görerek ve sonraki oturumlarda aynı konuyla tekrar karşılaşarak öğrenir.
 
-## Bilinen sorunlar
+## Bilinen sorunlar / düzeltilenler
+
+**Düzeltildi (v2): G-03 v1'de ters puanlanıyordu.** Soru "Tarayıcıya giden kodda görünüyorlar mı?" diye soruyordu.
+Burada "Evet", anahtarın açıkta olduğu (riskli) durumdu. Ama kod kontrol sorularında "Evet"e +1 verip riski
+kapatıyordu. Sonuç olarak anahtarı açıkta olduğunu dürüstçe söyleyen öğrenci ödüllendiriliyordu. Soru metni
+"Evet = iyi" olacak şekilde yeniden yazıldı: "API anahtarların yalnızca sunucuda ya da ortam değişkeninde mi
+duruyor, yani tarayıcıya giden kodda görünmüyorlar mı?" `evetSonuc` ve `hayirRisk` metinleri zaten bu yöne
+uygundu. Bu hata v2 modelinin etiketini de bozacaktı (kontrol sorusunda etiket "Evet" = başarı).
+
+**Bilinen sorunlar:**
 
 - Tutor ve soru uyarlama şu an yapay zekâya ulaşamıyor (Gemini API 403, ücretsiz katman kapalı). Uygulama yedek metin ve soru bankasıyla çalışıyor.
 - AI Studio paylaşım linki bazı Google hesaplarında açılmıyor (yaş doğrulaması / şartların kabulü).
