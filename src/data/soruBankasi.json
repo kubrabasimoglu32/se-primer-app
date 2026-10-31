@@ -556,7 +556,7 @@
           "teslim"
         ]
       },
-      "metin": "API anahtarların nerede duruyor? Tarayıcıya giden kodda görünüyorlar mı?",
+      "metin": "API anahtarların yalnızca sunucuda ya da ortam değişkeninde mi duruyor, yani tarayıcıya giden kodda görünmüyorlar mı?",
       "evetSonuc": "Anahtarlar sunucuda ya da ortam değişkeninde, tarayıcıya gitmiyor.",
       "hayirRisk": "API anahtarı tarayıcıya giden kodda olabilir.",
       "secenekler": [
