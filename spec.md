@@ -175,3 +175,99 @@ Eşleşme olursa cevap atılır ve yerine sorunun ipucu gösterilir. Eval'de fil
 1. **GitHub'a bağlanıp kodu otomatik okumak:** Öğrencinin kodunu dış bir servise göndermek hem güvenlik hem KVKK yükü getirir. Ayrıca amaç kodu analiz etmek değil, öğrenciyi kararları üzerine düşündürmek.
 2. **Hesap ve bulut kaydı:** Tek kullanıcılı bir öğrenme aracında kişisel veri toplamayı gerektirir. Dışa / içe aktarma kaybı önlemeye yetiyor.
 3. **"Doğru cevabı göster" düğmesi:** Tutorun temel sözünü bozar. Öğrenci doğru yolu, seçimin sonucunu görerek ve sonraki oturumlarda aynı konuyla tekrar karşılaşarak öğrenir.
+
+## 10. Uyarlamalı model (v2): Zorluk ayarı
+
+> **31 Ekim 2026'da, model eğitilmeden önce yazıldı.** Eval metriği ve kabul eşiği eğitimden sonra değiştirilmez.
+> Eşik geçilmezse model yayınlanmaz ve uygulama eski kuralla (Bölüm 4) çalışır. Eşik ancak **tarihli ve gerekçeli**
+> bir spec değişikliğiyle, **yeniden eğitimden önce** değiştirilebilir.
+
+**Amaç:** Bir konunun sorusu seçilirken, öğrencinin o konudaki **zor** soruyu düşük riskli cevaplama olasılığını
+tahmin etmek. Bölüm 4'teki kural hangi **konunun** sorulacağına karar vermeye devam eder; model yalnızca o konudan
+**kolay mı zor mu** soru geleceğine karar verir.
+
+Soru bankasındaki her soru `"zorluk": "kolay" | "zor"` alanı taşır.
+
+### 10.1 Etiket
+
+`basari = 1`: zor soruda düşük riskli seçenek seçildi (kontrol sorusunda "Evet").
+`basari = 0`: zor soruda orta ya da yüksek riskli seçenek seçildi (kontrol sorusunda "Hayır" ya da "Emin değilim").
+
+### 10.2 Girdiler
+
+Sıra sabittir; `config.json`'daki `features` sırası budur.
+
+| # | Özellik | Değer / birim |
+|---|---|---|
+| 1 | `seviye` | 0 = Yeni başladım, 1 = Biraz deneyimim var, 2 = Deneyimliyim |
+| 2 | `konu_beceri_puani` | Sorulacak konunun beceri puanı (0–5) |
+| 3 | `konudaki_onceki_soru_sayisi` | Bu konuda önceki oturumlarda cevaplanan soru sayısı |
+| 4 | `konudaki_onceki_riskli_sayisi` | Bu konuda önceki oturumlarda yapılan orta/yüksek riskli seçim sayısı |
+| 5 | `son_karar_suresi_sn` | Öğrencinin bir önceki sorudaki karar süresi (saniye) |
+| 6 | `son_gerekce_uzunlugu` | Bir önceki sorudaki "Neden bunu seçtin?" metninin karakter sayısı |
+| 7 | `oturum_no` | Oturumun sıra numarası (1'den başlar) |
+
+Bütün girdiler soru gösterilmeden **önce** bilinen değerlerdir. Etiketle aynı bilgiyi taşıyan (sızıntı yapan)
+özellik yoktur: sorulan sorunun cevabı, süresi ya da gerekçesi girdi olarak kullanılmaz.
+
+### 10.3 Çıktı ve uygulamadaki etkisi
+
+Çıktı: `p(basari)`. Model yalnızca **1. soru (aşama)** ve **3. soru (zayıf konu)** için kullanılır:
+
+| Koşul | Davranış |
+|---|---|
+| `p >= 0.5` | O konudan `zorluk = "zor"` soru gelir; cevaptan sonra tutor bir **"derinleş"** sorusu ekler. |
+| `p < 0.5` | O konudan `zorluk = "kolay"` soru gelir. |
+
+- **2. soru (değişiklik tetikli)** Bölüm 4'teki eski kuralla seçilir; model bu soruya dokunmaz.
+- Bölüm 4'teki ek kurallar (tetik koşulu, son 3 oturumda sorulmama, geri dönen karar) önce uygulanır.
+  İstenen zorlukta uygun soru kalmazsa o konunun diğer zorluktaki sorusu gelir. İki zorlukta da uygun soru yoksa
+  mevcut `konuSec` yedek davranışı çalışır (konudaki herhangi bir soru, o da yoksa sıradaki konu).
+- Ekrandaki not, istenen zorluğa göre değil **gerçekte gösterilen sorunun** zorluğuna göre yazılır:
+  zor soru → "Primer seni zorluyor", kolay soru → "Primer temelden alıyor".
+
+### 10.4 Veri toplama modu
+
+Veri toplama modunda zorluk modele göre değil, **yazı-turaya (%50 / %50)** göre seçilir. Böylece iki zorlukta da
+veri oluşur ve model kendi seçtiği sorulardan beslenmez. Kaydedilen veride kişisel veri bulunmaz; oturum kimliği
+rastgele üretilir.
+
+Her karar satırında (`data/oturumlar.csv`) zorlukla ilgili iki kayıt sütunu bulunur. Bunlar **modelin girdisi
+değildir** (girdiler yalnızca 10.2'deki 7 özelliktir):
+
+| Sütun | Değer | Anlamı |
+|---|---|---|
+| `soru_zorlugu` | 0 = kolay, 1 = zor | **Gerçekte gösterilen** sorunun zorluğu. Eval satırları buna göre seçilir (10.6). |
+| `zorluk_kaynagi` | `yazitura` | Veri toplama modunda zorluk yazı-turayla seçildi. |
+| | `model` | Zorluğu model seçti ve o zorlukta soru gösterildi. |
+| | `kural` | Zorluk seçilmedi: 2. soru (değişiklik tetikli) ya da model yüklenemediği için eski `konuSec` kuralı. |
+| | `yedek` | İstenen zorlukta uygun soru yoktu; diğer zorluktaki soru ya da `konuSec` yedeği gösterildi. |
+
+### 10.5 Yedek davranış
+
+Model yüklenemezse (ağ hatası, dosya yok, çıkarım hatası) eski `konuSec` kuralı değişmeden çalışır.
+Uygulama çökmez ve kullanıcıya hata gösterilmez.
+
+### 10.6 Eval ve kabul eşiği
+
+- **Veri:** Yalnızca zor soru satırları (`soru_zorlugu = 1`; etiket yalnızca orada tanımlı).
+- **Bölme:** Stratified %30 hold-out, `random_state = 13`.
+- **Metrik:** ROC-AUC.
+- **Kabul eşiği: ROC-AUC >= 0.65.** Eşiğin altındaki model yayınlanmaz; `train.py` hata vererek durur.
+
+### 10.7 Kabul örnekleri (v2)
+
+8. **Başarı olasılığı yüksek öğrenciye zor soru gelir**
+   **Verilen:** model, öğrencinin 1. sorunun (aşama) konusunda `p >= 0.5` tahmin ediyor.
+   **Olduğunda:** oturumun soruları seçilir.
+   **O zaman:** 1. soru o konudan `zorluk = "zor"` bir sorudur; cevaptan sonra tutor bir "derinleş" sorusu ekler.
+
+9. **Model değişiklik sorusuna dokunmaz**
+   **Verilen:** model yüklü ve öğrenci "Ne değişti?" ekranında yalnızca "Veri tabanı yapısı değiştirildi"yi işaretlemiş.
+   **Olduğunda:** "Değişiklikleri Kaydet & Soruları Getir"e basar.
+   **O zaman:** 3 sorudan biri yine V-01'dir ve yanında "Veri tabanı yapını değiştirdiğini söyledin" notu görünür.
+
+10. **Model yüklenemezse eski kural çalışır**
+    **Verilen:** `model.onnx` indirilemiyor ya da çalıştırılamıyor.
+    **Olduğunda:** uygulama açılır ve sorular seçilir.
+    **O zaman:** sorular eski `konuSec` kuralıyla seçilir, uygulama çökmez ve mevcut 7 Cypress testi geçer.
