@@ -111,6 +111,12 @@ kapatıyordu. Sonuç olarak anahtarı açıkta olduğunu dürüstçe söyleyen �
 duruyor, yani tarayıcıya giden kodda görünmüyorlar mı?" `evetSonuc` ve `hayirRisk` metinleri zaten bu yöne
 uygundu. Bu hata v2 modelinin etiketini de bozacaktı (kontrol sorusunda etiket "Evet" = başarı).
 
+**Düzeltildi (v2): Seçenekler iki kez karıştırılıyordu.** Soru ekranı açılınca seçenekler bir kez karıştırılıyor,
+hemen ardından bir effect onları ikinci kez karıştırıyordu. Kartlar A/B/C harfiyle eşlendiği için aynı kartın içine
+bir anlığına başka bir seçenek geliyordu; bu yüzden Cypress "düşük risk" sandığı kartı tıklarken yüksek riskli seçeneği
+seçebiliyor ve 1. test ara sıra kalıyordu. Artık seçenekler soru başına yalnız bir kez karıştırılıyor ve kart seçeneğin
+kendisine bağlı; sıra yine her soruda karışık.
+
 **Bilinen sorunlar:**
 
 - Tutor ve soru uyarlama şu an yapay zekâya ulaşamıyor (Gemini API 403, ücretsiz katman kapalı). Uygulama yedek metin ve soru bankasıyla çalışıyor.

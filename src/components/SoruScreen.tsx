@@ -110,12 +110,19 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
   mevcutAcikRiskSayisi,
   onOturumTamamla,
 }) => {
-  // Karar sorularında seçeneklerin her soruda karışık gelmesi
+  // Karar sorularında seçeneklerin her soruda karışık gelmesi.
+  // Seçenekler soru listesi başına YALNIZ BİR KEZ karıştırılır: ilk render'da useState içinde.
+  // (Eskiden effect ilk render'dan hemen sonra ikinci kez karıştırıyordu; ekranda görünen kart
+  // bir anlığına başka seçeneğe dönüşüyor, flaky Cypress testine yol açıyordu.)
+  const karistirilanSorular = useRef<SecilmisSoru[]>(sorular);
   const [calismaSorulari, setCalismaSorulari] = useState<SecilmisSoru[]>(() =>
     karistirKararSecenekleri(sorular)
   );
 
   useEffect(() => {
+    // Yalnız gerçekten yeni bir soru listesi gelirse yeniden karıştır.
+    if (karistirilanSorular.current === sorular) return;
+    karistirilanSorular.current = sorular;
     setCalismaSorulari(karistirKararSecenekleri(sorular));
   }, [sorular]);
 
@@ -647,7 +654,8 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
 
               return (
                 <div
-                  key={secenek.id}
+                  // Anahtar harf değil seçeneğin kendisi: sıra değişse bile DOM düğümü (kart + data-risk) aynı seçenekte kalır.
+                  key={`${aktifSoru.id}:${secenek.metin}`}
                   onClick={() => handleKararSecenekSec(secenek.id)}
                   data-cy={dataCy}
                   data-risk={secenek.risk}

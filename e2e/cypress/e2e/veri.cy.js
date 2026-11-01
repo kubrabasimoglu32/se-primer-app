@@ -4,11 +4,9 @@ const SECENEK = '[data-cy^="secenek-"]'
 const VERI_ANAHTARI = 'sePrimer.veri.v1'
 const PROJE_ANAHTARI = 'sePrimer.v1'
 
-/** Veri modunda açar. Math.random sabitlenir: yazı-tura ve seçenek karıştırma her koşuda aynı olur. */
+/** Veri modunda açar. Math.random sabitlenmez: yazı-tura ve seçenek karıştırma gerçek rastgeledir. */
 function veriModundaAc() {
-  cy.visit('/?veri=1', {
-    onBeforeLoad(win) { cy.stub(win.Math, 'random').returns(0.1) },
-  })
+  cy.visit('/?veri=1')
   cy.get('[data-cy="veri-modu-bandi"]').should('be.visible')
 }
 
@@ -23,13 +21,20 @@ function yeniProje(deneyimli) {
   cy.get(SECENEK).should('have.length.at.least', 2)
 }
 
+/** Her cevapta seçilen data-risk sırayla buraya yazılır (veri satırlarıyla aynı sıra). */
+let secilenRiskler = []
+
 /** 'iyi' = düşük risk; 'kotu' = önce yüksek, yoksa orta risk. */
 function sec(tercih) {
   cy.get(SECENEK).should('have.length.at.least', 2).then(($s) => {
     const sira = tercih === 'iyi' ? ['dusuk'] : ['yuksek', 'orta']
     for (const r of sira) {
       const h = $s.filter('[data-risk="' + r + '"]')
-      if (h.length) { cy.wrap(h.first()).click(); return }
+      if (h.length) {
+        secilenRiskler.push(r)
+        cy.wrap(h.first()).click().should('have.attr', 'data-risk', r)
+        return
+      }
     }
     throw new Error('Uygun data-risk bulunamadı')
   })
@@ -70,6 +75,7 @@ describe('SE Primer · Veri Toplama Modu', () => {
   beforeEach(() => {
     cy.intercept('POST', '/api/**', { statusCode: 500, body: { hata: 'test' } })
     cy.clearLocalStorage()
+    secilenRiskler = []
   })
 
   it('1) Tanışmada "Deneyimliyim" -> veri satırlarında seviye = 2', () => {
@@ -81,7 +87,7 @@ describe('SE Primer · Veri Toplama Modu', () => {
     })
   })
 
-  it('2) Riskli seçimler: basari = 0, aynı konuda önceki riskli sayısı artar, beceri puanı düşer', () => {
+  it('2) Riskli seçimler: basari = 0, önceki riskli sayısı artar, yalnız yüksek riskli karar puanı düşürür', () => {
     yeniProje(false)
     oturumuTamamla('kotu')
     yeniOturumBaslat(); oturumuTamamla('kotu')
@@ -93,38 +99,57 @@ describe('SE Primer · Veri Toplama Modu', () => {
       const tur = Object.fromEntries(banka.sorular.map((s) => [s.id, s.tur]))
 
       satirlar().then((rows) => {
+        expect(rows, 'satır sayısı').to.have.length(12)
+        expect(secilenRiskler, 'kaydedilen seçim sayısı').to.have.length(12)
+        // Satırlar cevap sırasıyla eklenir: i. satır = i. seçim
+        rows.forEach((r, i) => { r.secilen = secilenRiskler[i] })
+
         const oturumlar = oturumlaraBol(rows)
         expect(oturumlar, 'oturum sayısı').to.have.length(4)
-        expect(rows, 'satır sayısı').to.have.length(12)
 
         // Hep riskli seçildi -> her satırda basari = 0
         rows.forEach((r) => expect(r.basari, `${r.soru_id} (oturum ${r.oturum_no}) basari`).to.eq(0))
 
-        // 1. oturumdaki her konunun ilk satırı: o anki puan ve soru türü
-        const ilk = {}
-        oturumlar[0].forEach((r) => { if (!(r.konu in ilk)) ilk[r.konu] = r })
+        // spec §4 puanlama: karar sorusunda yalnız YÜKSEK risk -1, orta 0;
+        // kontrol sorusunda "Hayır" / "Emin değilim" puan değiştirmez. Puan 0-5 arasında kalır
+        // ve oturum sonunda uygulanır (özellikler oturum başındaki karttan hesaplanır).
+        const puanDegisimi = (r) => (tur[r.soru_id] === 'karar' && r.secilen === 'yuksek' ? -1 : 0)
 
-        const tekrarlar = oturumlar.slice(1).flat().filter((r) => r.konu in ilk)
-        cy.log(`1. oturum konuları: ${Object.keys(ilk).join(', ')}; sonraki oturumlarda tekrar: ${tekrarlar.length}`)
-        expect(tekrarlar.length, '1. oturumdaki bir konu sonraki oturumlarda geldi').to.be.at.least(1)
+        const beklenen = {}        // konu -> o oturum başındaki beklenen beceri puanı
+        const oncekiSoru = {}      // konu -> bu konuda daha önce cevaplanan soru sayısı
+        let tekrar = 0
+        let dusus = 0
 
-        // Puan düşüşü yalnız şu durumda beklenir (uygulamanın puan kuralı):
-        //  - 1. oturumdaki soru bir KARAR sorusuydu (riskli seçim -1; kontrolde "Hayır"/"Emin değilim" 0 verir),
-        //  - ve puan 0'ın üstündeydi (beceri 0-5 arasına sıkıştırılır, 0'dan aşağı inmez).
-        // Diğer durumlarda puan en azından artmamalıdır.
-        let dusmesiGereken = 0
-        tekrarlar.forEach((r) => {
-          const etiket = `${r.konu} (oturum ${r.oturum_no})`
-          const ilkSatir = ilk[r.konu]
-          expect(r.konudaki_onceki_riskli_sayisi, `${etiket} önceki riskli`).to.be.at.least(1)
-          if (tur[ilkSatir.soru_id] === 'karar' && ilkSatir.konu_beceri_puani > 0) {
-            dusmesiGereken++
-            expect(r.konu_beceri_puani, `${etiket} beceri puanı düştü`).to.be.lessThan(ilkSatir.konu_beceri_puani)
-          } else {
-            expect(r.konu_beceri_puani, `${etiket} beceri puanı artmadı`).to.be.at.most(ilkSatir.konu_beceri_puani)
-          }
+        oturumlar.forEach((oturum) => {
+          oturum.forEach((r) => {
+            const etiket = `${r.soru_id}/${r.konu} (oturum ${r.oturum_no}, seçim ${r.secilen})`
+            const once = oncekiSoru[r.konu] || 0
+            expect(r.konudaki_onceki_soru_sayisi, `${etiket} önceki soru`).to.eq(once)
+            // Hep riskli seçildiği için konudaki önceki her soru riskli sayılır
+            expect(r.konudaki_onceki_riskli_sayisi, `${etiket} önceki riskli`).to.eq(once)
+            if (r.konu in beklenen) {
+              tekrar++
+              expect(r.konudaki_onceki_riskli_sayisi, `${etiket} önceki riskli >= 1`).to.be.at.least(1)
+              expect(r.konu_beceri_puani, `${etiket} beceri puanı`).to.eq(beklenen[r.konu])
+            }
+          })
+          // Oturum bitti: konu başına puan farkı toplanır ve 0-5 arasına sıkıştırılır.
+          const fark = {}
+          oturum.forEach((r) => {
+            if (!(r.konu in beklenen)) beklenen[r.konu] = r.konu_beceri_puani
+            fark[r.konu] = (fark[r.konu] || 0) + puanDegisimi(r)
+            oncekiSoru[r.konu] = (oncekiSoru[r.konu] || 0) + 1
+          })
+          Object.keys(fark).forEach((k) => {
+            const yeni = Math.min(5, Math.max(0, beklenen[k] + fark[k]))
+            if (yeni < beklenen[k]) dusus++
+            beklenen[k] = yeni
+          })
         })
-        expect(dusmesiGereken, 'puanı düşmesi gereken en az bir tekrar var').to.be.at.least(1)
+
+        // Kapsam: hiç tekrar yoksa yukarıdaki puan kontrolleri boşa çıkar.
+        cy.log(`tekrar eden konu satırı: ${tekrar}, yüksek riskli karar sonrası puan düşüşü: ${dusus}`)
+        expect(tekrar, 'en az bir konu sonraki oturumda tekrar geldi').to.be.at.least(1)
       })
     })
   })
