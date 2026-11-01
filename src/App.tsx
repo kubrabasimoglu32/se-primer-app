@@ -23,6 +23,17 @@ import { konuSec } from "./primer/konuSec";
 import { analizEtVeKartOlustur, sorulariUyarla } from "./services/api";
 import { onMaskelemeBildirimi } from "./primer/maskele";
 import { EvalScreen } from "./components/EvalScreen";
+import {
+  OzellikVektoru,
+  csvIndir,
+  oturumIdUret,
+  ozellikleriHesapla,
+  satirOlustur,
+  satirlariEkle,
+  satirlariOku,
+  veriModuAcikMi,
+  yaziTuraTercihi,
+} from "./primer/veriToplama";
 
 type Ekran = "tanisma" | "nedegisti" | "soru" | "projem";
 
@@ -36,6 +47,18 @@ export default function App() {
   const [hazirlaniyor, setHazirlaniyor] = useState<boolean>(false);
   const [hazirlaniyorMesaji, setHazirlaniyorMesaji] = useState<string>("Proje analizi yapılıyor...");
   const [maskelemeBildirimi, setMaskelemeBildirimi] = useState<string | null>(null);
+
+  // Veri Toplama Modu (?veri=1, spec §10.4): zorluk yazı-turayla seçilir, her cevap anonim bir satır olur.
+  const [veriModu] = useState<boolean>(() => veriModuAcikMi());
+  const [aktifOturumId, setAktifOturumId] = useState<string>("");
+  const [veriSatirSayisi, setVeriSatirSayisi] = useState<number>(() => (veriModuAcikMi() ? satirlariOku().length : 0));
+
+  /** Normal modda boş tercih (eski kural); veri modunda 1. ve 3. soru için yazı-tura ve yeni oturum kimliği. */
+  const zorlukTercihiHazirla = () => {
+    if (!veriModu) return {};
+    setAktifOturumId(oturumIdUret());
+    return yaziTuraTercihi();
+  };
 
   // Gizli eval modu kontrolü (?eval=1)
   const [isEvalMode, setIsEvalMode] = useState<boolean>(() => {
@@ -87,6 +110,7 @@ export default function App() {
   const handleProjeOlustur = async (temelProje: ProjeKarti) => {
     setHazirlaniyor(true);
     setHazirlaniyorMesaji("Proje kartı ve ilk mimari riskler analiz ediliyor...");
+    const zorlukTercihi = zorlukTercihiHazirla();
 
     try {
       // 1. POST /api/kart çağrısı (Gemini sunucu tarafı)
@@ -100,7 +124,7 @@ export default function App() {
       };
 
       // 2. Soru seçimi (hangi konu) KODDA kalır, Gemini'ye bırakılmaz
-      const secilenSorular = konuSec(tamProje, ["plan"]);
+      const secilenSorular = konuSec(tamProje, ["plan"], zorlukTercihi);
 
       setHazirlaniyorMesaji("Sorular projenize özel uyarlanıyor...");
 
@@ -115,7 +139,7 @@ export default function App() {
       setEkran("soru");
     } catch (error) {
       console.warn("Proje oluşturma akışında hata, yerel verilerle devam ediliyor:", error);
-      const secilenSorular = konuSec(temelProje, ["plan"]);
+      const secilenSorular = konuSec(temelProje, ["plan"], zorlukTercihi);
       setProje(temelProje);
       saveProje(temelProje);
       setAktifSorular(secilenSorular);
@@ -140,10 +164,11 @@ export default function App() {
 
     setHazirlaniyor(true);
     setHazirlaniyorMesaji("Seçilen sorular projenize özel uyarlanıyor...");
+    const zorlukTercihi = zorlukTercihiHazirla();
 
     try {
       // 1. Soru seçimi KODDA kalır
-      const secilenSorular = konuSec(proje, degisiklikler);
+      const secilenSorular = konuSec(proje, degisiklikler, zorlukTercihi);
 
       // 2. POST /api/soru-uyarla çağrısı
       const uyarlanmisSorular = await sorulariUyarla(proje, secilenSorular);
@@ -154,7 +179,7 @@ export default function App() {
       setEkran("soru");
     } catch (error) {
       console.warn("Soru uyarlama çağrısında hata, bankadaki orijinal sorular kullanılıyor:", error);
-      const secilenSorular = konuSec(proje, degisiklikler);
+      const secilenSorular = konuSec(proje, degisiklikler, zorlukTercihi);
       setAktifSorular(secilenSorular);
       setBekleyenDegisiklikler(degisiklikler);
       setBekleyenNot(notMetni);
@@ -171,9 +196,21 @@ export default function App() {
     puanFarki: Partial<BeceriHaritasi>,
     eklenenRiskler: string[],
     kapatilanRiskler: string[],
-    genelOturumNotu?: string
+    genelOturumNotu?: string,
+    gosterimOzellikleri?: OzellikVektoru[]
   ) => {
     if (!proje) return;
+
+    // Veri Toplama Modu: her cevap bir satır. Özellikler soru gösterilirken (oturum başındaki kartla) hesaplandı.
+    if (veriModu) {
+      const satirlar = soruCevaplar.flatMap((cevap, idx) => {
+        const soru = aktifSorular[idx];
+        if (!soru) return [];
+        const ozellik = gosterimOzellikleri?.[idx] ?? ozellikleriHesapla(proje, soru.konu, undefined);
+        return [satirOlustur(aktifOturumId || oturumIdUret(), soru, cevap, ozellik, soru.slot ?? idx + 1)];
+      });
+      setVeriSatirSayisi(satirlariEkle(satirlar));
+    }
 
     const simdikiTarih = new Intl.DateTimeFormat("tr-TR", {
       day: "numeric",
@@ -303,6 +340,14 @@ export default function App() {
       />
 
       <main className="flex-1 pb-10">
+        {veriModu && (
+          <div
+            data-cy="veri-modu-bandi"
+            className="mx-auto max-w-2xl mt-2 px-3 py-1.5 text-[11px] font-mono text-[#92400E] bg-[#FFFBEB] border border-[#FCD34D] rounded"
+          >
+            VERİ TOPLAMA MODU · Cevapların anonim olarak (ad, e-posta, metin yok) yalnızca bu tarayıcıda kaydedilir.
+          </div>
+        )}
         {ekran === "tanisma" && (
           <TanismaScreen
             onProjeOlustur={handleProjeOlustur}
@@ -332,6 +377,9 @@ export default function App() {
         {ekran === "projem" && proje && (
           <ProjemScreen
             proje={proje}
+            veriModu={veriModu}
+            veriSatirSayisi={veriSatirSayisi}
+            onVeriIndir={() => csvIndir()}
             onYeniOturum={handleYeniOturum}
             onProjeyiSifirla={handleProjeyiSifirla}
             onProjeYukle={handleProjeYukle}

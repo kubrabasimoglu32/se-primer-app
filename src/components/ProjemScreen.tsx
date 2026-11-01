@@ -37,6 +37,10 @@ interface ProjemScreenProps {
   onProjeyiSifirla: () => void;
   onProjeYukle?: (yuklenenProje: ProjeKarti) => void;
   onAsamaDegistir?: (yeniAsama: Asama) => void;
+  // Veri Toplama Modu (?veri=1): yalnız bu modda CSV indirme düğmesi görünür
+  veriModu?: boolean;
+  veriSatirSayisi?: number;
+  onVeriIndir?: () => void;
 }
 
 const BECERI_ETIKETLERI: { key: keyof BeceriHaritasi; label: string; aciklama: string }[] = [
@@ -56,6 +60,9 @@ export const ProjemScreen: React.FC<ProjemScreenProps> = ({
   onProjeyiSifirla,
   onProjeYukle,
   onAsamaDegistir,
+  veriModu = false,
+  veriSatirSayisi = 0,
+  onVeriIndir,
 }) => {
   const [aktifSekme, setAktifSekme] = useState<"genel" | "beceri" | "kararlar" | "dosyalar">("genel");
   const [genisletilmisOturum, setGenisletilmisOturum] = useState<number | null>(
@@ -335,6 +342,25 @@ export const ProjemScreen: React.FC<ProjemScreenProps> = ({
           </button>
         </div>
       </div>
+
+      {/* VERİ TOPLAMA MODU: CSV indir (yalnız ?veri=1) */}
+      {veriModu && onVeriIndir && (
+        <div className="bg-[#FFFBEB] border border-[#FCD34D] rounded p-3 shadow-xs flex items-center justify-between space-x-2">
+          <span className="text-xs font-mono text-[#92400E]">
+            Toplanan veri: <strong data-cy="veri-satir-sayisi">{veriSatirSayisi}</strong> satır
+          </span>
+          <button
+            type="button"
+            data-cy="veri-csv-indir"
+            onClick={onVeriIndir}
+            disabled={veriSatirSayisi === 0}
+            className="py-2 px-2.5 bg-[#FFFFFF] hover:bg-[#FEF3C7] text-[#0F172A] text-xs font-mono font-semibold rounded border border-[#FCD34D] transition-colors flex items-center justify-center space-x-1.5 disabled:opacity-50"
+          >
+            <Download className="w-3.5 h-3.5 text-[#92400E]" />
+            <span>Veriyi CSV indir</span>
+          </button>
+        </div>
+      )}
 
       {/* 4. DIŞA AKTAR VE İÇE AKTAR KARTI */}
       <div className="bg-[#FFFFFF] border border-[#CBD5E1] rounded p-3 shadow-xs flex items-center justify-between space-x-2">

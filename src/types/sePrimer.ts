@@ -53,6 +53,12 @@ export interface SoruCevap {
   degerlendirme?: "yeterli" | "kismen" | "eksik";
   primerSorusu?: string;
   primerYaniti?: string;
+  // Ölçüm (v2): her modda karta yazılır; sonraki sorunun "son_" özellikleri buradan gelir
+  kararSuresiSn?: number;          // soru ekrana geldiği an → son seçenek seçildiği an
+  secenekDegistirmeSayisi?: number; // Devam'dan önce seçeneği kaç kez değiştirdi
+  gerekceUzunlugu?: number;         // "Neden bunu seçtin?" metninin karakter sayısı
+  soruZorlugu?: Zorluk;
+  slot?: 1 | 2 | 3;
 }
 
 export interface Oturum {

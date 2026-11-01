@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Check,
   AlertTriangle,
@@ -31,6 +31,12 @@ import {
   ProjeKarti,
 } from "../types/sePrimer";
 import { tutorCevapAl } from "../services/api";
+import {
+  OzellikVektoru,
+  olcumAl,
+  ozellikleriHesapla,
+  sonOlcumuBul,
+} from "../primer/veriToplama";
 
 interface SoruScreenProps {
   kart: ProjeKarti;
@@ -43,7 +49,8 @@ interface SoruScreenProps {
     puanFarki: Partial<BeceriHaritasi>,
     eklenenRiskler: string[],
     kapatilanRiskler: string[],
-    genelOturumNotu?: string
+    genelOturumNotu?: string,
+    gosterimOzellikleri?: OzellikVektoru[]
   ) => void;
 }
 
@@ -66,6 +73,9 @@ interface SoruCevapDurumu {
   // Primer'e sor geçmişi
   primerSorusu?: string;
   primerYaniti?: string;
+  // Ölçüm (v2)
+  kararSuresiSn?: number;
+  secenekDegistirmeSayisi?: number;
 }
 
 // Karar sorularında seçeneklerin sırasını karıştır (iyi seçenek hep A olmasın)
@@ -132,6 +142,35 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
   const toplamSoru = calismaSorulari.length || sorular.length; // 3 soru
   const mevcutCevap = cevaplar[aktifSoruIndeks];
 
+  // Ölçüm (v2): her sorunun ekrana geldiği an ve o andaki özellikler (soru GÖSTERİLMEDEN ÖNCE bilinenler).
+  // Özellikler oturum başındaki karttan ve bir önceki cevabın ölçümünden hesaplanır; bu sorunun cevabını görmez.
+  const gosterimAnlari = useRef<Record<number, number>>({});
+  const gosterimOzellikleri = useRef<Record<number, OzellikVektoru>>({});
+
+  useEffect(() => {
+    if (!aktifSoru || gosterimAnlari.current[aktifSoruIndeks] !== undefined) return;
+    gosterimAnlari.current[aktifSoruIndeks] = performance.now();
+    const onceki = aktifSoruIndeks === 0
+      ? sonOlcumuBul(kart)
+      : olcumAl({
+          kararSuresiSn: cevaplar[aktifSoruIndeks - 1]?.kararSuresiSn,
+          gerekceUzunlugu: (cevaplar[aktifSoruIndeks - 1]?.kullaniciGerekcesi || "").trim().length,
+        });
+    gosterimOzellikleri.current[aktifSoruIndeks] = ozellikleriHesapla(kart, aktifSoru.konu, onceki);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aktifSoruIndeks, aktifSoru]);
+
+  /** Seçim anındaki ölçüm: gösterimden bu yana geçen süre ve seçenek değiştirme sayısı. */
+  const secimOlcumu = (yeniId: "A" | "B" | "C") => {
+    const baslangic = gosterimAnlari.current[aktifSoruIndeks] ?? performance.now();
+    const oncekiId = mevcutCevap?.secilenId;
+    return {
+      kararSuresiSn: Math.max(0, (performance.now() - baslangic) / 1000),
+      secenekDegistirmeSayisi:
+        (mevcutCevap?.secenekDegistirmeSayisi || 0) + (oncekiId && oncekiId !== yeniId ? 1 : 0),
+    };
+  };
+
   // Soru değiştiğinde ipucu durumunu seviyeye göre sıfırla
   useEffect(() => {
     setIpucuAcik(!isDeneyimli);
@@ -160,6 +199,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
 
     const oncekiDegerlendirme = mevcutCevap?.degerlendirmeSonucu;
     const oncekiBonus = oncekiDegerlendirme === "yeterli" ? 1 : 0;
+    const olcum = secimOlcumu(secenekId);
 
     setCevaplar((prev) => ({
       ...prev,
@@ -176,6 +216,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
         riskEklesinMi: riskEkle,
         kullaniciGerekcesi: gerekceGirdisi.trim(),
         kararNotu: kararNotuGirdisi.trim(),
+        ...olcum,
       },
     }));
 
@@ -194,6 +235,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
     let temelPuan = 0;
     const oncekiDegerlendirme = mevcutCevap?.degerlendirmeSonucu;
     const oncekiBonus = oncekiDegerlendirme === "yeterli" ? 1 : 0;
+    const olcum = secimOlcumu(secenekId);
 
     if (secenekId === "A") {
       // Evet: +1 ve ilgili riski kapat
@@ -213,6 +255,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
           riskEklesinMi: undefined,
           kullaniciGerekcesi: gerekceGirdisi.trim(),
           kararNotu: kararNotuGirdisi.trim(),
+          ...olcum,
         },
       }));
     } else if (secenekId === "B") {
@@ -234,6 +277,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
           riskKapatsinMi: undefined,
           kullaniciGerekcesi: gerekceGirdisi.trim(),
           kararNotu: kararNotuGirdisi.trim(),
+          ...olcum,
         },
       }));
     } else {
@@ -255,6 +299,7 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
           riskKapatsinMi: undefined,
           kullaniciGerekcesi: gerekceGirdisi.trim(),
           kararNotu: kararNotuGirdisi.trim(),
+          ...olcum,
         },
       }));
     }
@@ -403,6 +448,11 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
         degerlendirme: c?.degerlendirmeSonucu,
         primerSorusu: c?.primerSorusu,
         primerYaniti: c?.primerYaniti,
+        kararSuresiSn: c?.kararSuresiSn !== undefined ? Math.round(c.kararSuresiSn * 100) / 100 : undefined,
+        secenekDegistirmeSayisi: c?.secenekDegistirmeSayisi ?? 0,
+        gerekceUzunlugu: (c?.kullaniciGerekcesi || "").trim().length,
+        soruZorlugu: s.zorluk,
+        slot: s.slot,
         sokratikCevap: c?.tutorSokratikYanit || (c?.kullaniciGerekcesi
           ? "Bu kararı verirken sistemin 6 ay sonraki bakım maliyetini ve olası bir ekip değişiminde bilginin nasıl aktarılacağını hesaba kattın mı?"
           : undefined),
@@ -452,7 +502,8 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
       puanFarki,
       eklenenRiskler,
       kapatilanRiskler,
-      genelOturumNotu
+      genelOturumNotu,
+      calismaSorulari.map((_, idx) => gosterimOzellikleri.current[idx])
     );
   };
 
