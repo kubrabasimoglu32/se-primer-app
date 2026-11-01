@@ -44,6 +44,7 @@ export interface OncekiOlcum {
 }
 
 export interface VeriSatiri extends OzellikVektoru {
+  proje_id: string;
   oturum_id: string;
   soru_id: string;
   konu: string;
@@ -58,6 +59,7 @@ export interface VeriSatiri extends OzellikVektoru {
 
 /** CSV sütun sırası: kimlik → 7 özellik (spec §10.2) → soru_zorlugu → kayıt/etiket sütunları. */
 export const CSV_SUTUNLARI: (keyof VeriSatiri)[] = [
+  "proje_id",
   "oturum_id",
   "soru_id",
   "konu",
@@ -95,10 +97,10 @@ export function yaziTuraTercihi(): ZorlukTercihi {
 }
 
 /**
- * Rastgele oturum kimliği. crypto.randomUUID yalnızca güvenli bağlamda (https / localhost) var;
+ * Rastgele kimlik (proje_id, oturum_id). crypto.randomUUID yalnızca güvenli bağlamda (https / localhost) var;
  * telefondan yerel ağ IP'siyle (http) açılınca yoksa getRandomValues ile v4 UUID üretilir.
  */
-export function oturumIdUret(): string {
+export function kimlikUret(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
@@ -107,6 +109,11 @@ export function oturumIdUret(): string {
   b[8] = (b[8] & 0x3f) | 0x80;
   const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
+/** Kartta proje kimliği yoksa (v1 kartı, eski içe aktarma) yenisini ekler; varsa kartı aynen döndürür. */
+export function projeIdGaranti<T extends { projeId?: string }>(kart: T): T {
+  return kart.projeId ? kart : { ...kart, projeId: kimlikUret() };
 }
 
 // --------------------------------------------------------------------------- özellikler
@@ -171,6 +178,7 @@ export function basariBul(c: Pick<SoruCevap, "riskDerecesi">): 0 | 1 {
 }
 
 export function satirOlustur(
+  projeId: string,
   oturumId: string,
   soru: SecilmisSoru,
   cevap: SoruCevap,
@@ -178,6 +186,7 @@ export function satirOlustur(
   slot: number
 ): VeriSatiri {
   return {
+    proje_id: projeId,
     oturum_id: oturumId,
     soru_id: soru.id,
     konu: soru.konu,

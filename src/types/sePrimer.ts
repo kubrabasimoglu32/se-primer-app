@@ -75,6 +75,8 @@ export interface Oturum {
 }
 
 export interface ProjeKarti {
+  /** Rastgele proje kimliği (UUID). Kişisel veri değil; aynı kişinin oturumlarını gruplamak için (spec §10.4). */
+  projeId?: string;
   ad: string;
   aciklama: string;
   asama: Asama;

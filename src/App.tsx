@@ -26,8 +26,9 @@ import { EvalScreen } from "./components/EvalScreen";
 import {
   OzellikVektoru,
   csvIndir,
-  oturumIdUret,
+  kimlikUret,
   ozellikleriHesapla,
+  projeIdGaranti,
   satirOlustur,
   satirlariEkle,
   satirlariOku,
@@ -56,7 +57,7 @@ export default function App() {
   /** Normal modda boş tercih (eski kural); veri modunda 1. ve 3. soru için yazı-tura ve yeni oturum kimliği. */
   const zorlukTercihiHazirla = () => {
     if (!veriModu) return {};
-    setAktifOturumId(oturumIdUret());
+    setAktifOturumId(kimlikUret());
     return yaziTuraTercihi();
   };
 
@@ -111,12 +112,14 @@ export default function App() {
     setHazirlaniyor(true);
     setHazirlaniyorMesaji("Proje kartı ve ilk mimari riskler analiz ediliyor...");
     const zorlukTercihi = zorlukTercihiHazirla();
+    const projeId = kimlikUret();
 
     try {
       // 1. POST /api/kart çağrısı (Gemini sunucu tarafı)
       const analiz = await analizEtVeKartOlustur(temelProje);
       const tamProje: ProjeKarti = {
         ...temelProje,
+        projeId,
         teknoloji: analiz.teknoloji,
         mimari: analiz.mimari,
         dosyaYapisi: analiz.dosyaYapisi,
@@ -139,9 +142,10 @@ export default function App() {
       setEkran("soru");
     } catch (error) {
       console.warn("Proje oluşturma akışında hata, yerel verilerle devam ediliyor:", error);
-      const secilenSorular = konuSec(temelProje, ["plan"], zorlukTercihi);
-      setProje(temelProje);
-      saveProje(temelProje);
+      const yerelProje: ProjeKarti = { ...temelProje, projeId };
+      const secilenSorular = konuSec(yerelProje, ["plan"], zorlukTercihi);
+      setProje(yerelProje);
+      saveProje(yerelProje);
       setAktifSorular(secilenSorular);
       setBekleyenDegisiklikler(["plan"]);
       setBekleyenNot("İlk seans: Proje başlangıç tanımı.");
@@ -153,8 +157,10 @@ export default function App() {
 
   // "Örnek projeyle dene"
   const handleOrnekProjeYukle = () => {
-    setProje(ORNEK_PROJE);
-    saveProje(ORNEK_PROJE);
+    // Her "örnek projeyle dene" yeni bir proje sayılır: yeni proje_id
+    const ornek: ProjeKarti = { ...ORNEK_PROJE, projeId: kimlikUret() };
+    setProje(ornek);
+    saveProje(ornek);
     setEkran("projem");
   };
 
@@ -201,13 +207,16 @@ export default function App() {
   ) => {
     if (!proje) return;
 
+    // v1'den kalan kartlarda proje kimliği yoksa burada eklenir ve kartla birlikte kaydedilir.
+    const projeId = proje.projeId || kimlikUret();
+
     // Veri Toplama Modu: her cevap bir satır. Özellikler soru gösterilirken (oturum başındaki kartla) hesaplandı.
     if (veriModu) {
       const satirlar = soruCevaplar.flatMap((cevap, idx) => {
         const soru = aktifSorular[idx];
         if (!soru) return [];
         const ozellik = gosterimOzellikleri?.[idx] ?? ozellikleriHesapla(proje, soru.konu, undefined);
-        return [satirOlustur(aktifOturumId || oturumIdUret(), soru, cevap, ozellik, soru.slot ?? idx + 1)];
+        return [satirOlustur(projeId, aktifOturumId || kimlikUret(), soru, cevap, ozellik, soru.slot ?? idx + 1)];
       });
       setVeriSatirSayisi(satirlariEkle(satirlar));
     }
@@ -260,6 +269,7 @@ export default function App() {
 
     const guncelProje: ProjeKarti = {
       ...proje,
+      projeId,
       beceri: guncelBeceri,
       acikRiskler: guncelRiskler,
       oturumlar: [...proje.oturumlar, yeniOturum],
@@ -282,8 +292,10 @@ export default function App() {
 
   // Dışarıdan Proje Yükleme (İçe Aktar)
   const handleProjeYukle = (yuklenenProje: ProjeKarti) => {
-    setProje(yuklenenProje);
-    saveProje(yuklenenProje);
+    // İçe aktarılan kartın proje_id'si korunur (aynı proje); yoksa yenisi verilir.
+    const kart = projeIdGaranti(yuklenenProje);
+    setProje(kart);
+    saveProje(kart);
     setEkran("projem");
   };
 
