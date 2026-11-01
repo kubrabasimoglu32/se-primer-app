@@ -16,6 +16,7 @@
       "id": "K-01",
       "konu": "kapsam",
       "tur": "karar",
+      "zorluk": "kolay",
       "tetik": {
         "asama": [
           "fikir",
@@ -50,6 +51,7 @@
       "id": "K-02",
       "konu": "kapsam",
       "tur": "karar",
+      "zorluk": "zor",
       "tetik": {
         "asama": [
           "fikir",
@@ -89,6 +91,7 @@
       "id": "M-01",
       "konu": "mimari",
       "tur": "karar",
+      "zorluk": "zor",
       "tetik": {
         "asama": [
           "tasarim",
@@ -122,6 +125,7 @@
       "id": "M-02",
       "konu": "mimari",
       "tur": "karar",
+      "zorluk": "zor",
       "tetik": {
         "asama": [
           "tasarim",
@@ -160,6 +164,7 @@
       "id": "M-03",
       "konu": "mimari",
       "tur": "kontrol",
+      "zorluk": "kolay",
       "tetik": {
         "asama": [
           "tasarim",
@@ -180,6 +185,7 @@
       "id": "V-01",
       "konu": "veriTabani",
       "tur": "karar",
+      "zorluk": "kolay",
       "tetik": {
         "degisiklik": [
           "veriTabani"
@@ -208,6 +214,7 @@
       "id": "V-02",
       "konu": "veriTabani",
       "tur": "karar",
+      "zorluk": "zor",
       "tetik": {
         "asama": [
           "tasarim",
@@ -246,6 +253,7 @@
       "id": "V-03",
       "konu": "veriTabani",
       "tur": "kontrol",
+      "zorluk": "kolay",
       "tetik": {
         "veriTabani": [
           "Firebase",
@@ -272,6 +280,7 @@
       "id": "V-04",
       "konu": "veriTabani",
       "tur": "kontrol",
+      "zorluk": "kolay",
       "tetik": {
         "asama": [
           "kodlama",
@@ -293,6 +302,7 @@
       "id": "D-01",
       "konu": "dosyaDuzeni",
       "tur": "karar",
+      "zorluk": "kolay",
       "tetik": {
         "asama": [
           "kodlama"
@@ -322,6 +332,7 @@
       "id": "D-02",
       "konu": "dosyaDuzeni",
       "tur": "kontrol",
+      "zorluk": "kolay",
       "tetik": {
         "asama": [
           "kodlama",
@@ -343,6 +354,7 @@
       "id": "D-03",
       "konu": "dosyaDuzeni",
       "tur": "karar",
+      "zorluk": "zor",
       "tetik": {
         "asama": [
           "kodlama",
@@ -380,6 +392,7 @@
       "id": "T-01",
       "konu": "test",
       "tur": "karar",
+      "zorluk": "zor",
       "tetik": {
         "asama": [
           "kodlama",
@@ -413,6 +426,7 @@
       "id": "T-02",
       "konu": "test",
       "tur": "karar",
+      "zorluk": "zor",
       "tetik": {
         "asama": [
           "kodlama",
@@ -451,6 +465,7 @@
       "id": "T-03",
       "konu": "test",
       "tur": "karar",
+      "zorluk": "kolay",
       "tetik": {
         "asama": [
           "kodlama",
@@ -480,6 +495,7 @@
       "id": "G-01",
       "konu": "guvenlik",
       "tur": "karar",
+      "zorluk": "zor",
       "tetik": {
         "kisiselVeri": [
           true,
@@ -517,6 +533,7 @@
       "id": "G-02",
       "konu": "guvenlik",
       "tur": "karar",
+      "zorluk": "kolay",
       "tetik": {
         "kisiselVeri": [
           true
@@ -548,6 +565,7 @@
       "id": "G-03",
       "konu": "guvenlik",
       "tur": "kontrol",
+      "zorluk": "kolay",
       "tetik": {
         "degisiklik": [
           "yayinaAldim"
@@ -570,6 +588,7 @@
       "id": "Y-01",
       "konu": "dagitim",
       "tur": "karar",
+      "zorluk": "zor",
       "tetik": {
         "asama": [
           "test",
@@ -602,6 +621,7 @@
       "id": "Y-02",
       "konu": "dagitim",
       "tur": "kontrol",
+      "zorluk": "kolay",
       "tetik": {
         "asama": [
           "test",
@@ -622,6 +642,7 @@
       "id": "R-01",
       "konu": "rapor",
       "tur": "kontrol",
+      "zorluk": "kolay",
       "tetik": {
         "asama": [
           "kodlama",
@@ -643,6 +664,7 @@
       "id": "R-02",
       "konu": "rapor",
       "tur": "karar",
+      "zorluk": "zor",
       "tetik": {
         "her": true
       },
@@ -678,6 +700,7 @@
       "id": "R-03",
       "konu": "rapor",
       "tur": "karar",
+      "zorluk": "kolay",
       "tetik": {
         "degisiklik": [
           "hataCikti"
