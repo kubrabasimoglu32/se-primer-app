@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BankSoru, Konu, ProjeKarti, SecilmisSoru } from "../types/sePrimer";
+import { BankSoru, Konu, ProjeKarti, SecilmisSoru, Zorluk, ZorlukTercihi } from "../types/sePrimer";
 import soruBankasiData from "../data/soruBankasi.json";
 
 const ASAMA_KONULARI: Record<string, Konu[]> = {
@@ -169,7 +169,21 @@ function getSonOturumSoruIdleri(kart: ProjeKarti): Set<string> {
 }
 
 /**
+ * Eski kuralın uygun bulduğu adaylar içinden istenen zorluktakini seçer.
+ * Zorluk tercihi yoksa ya da o zorlukta aday yoksa eski kural gibi ilk adayı döndürür.
+ */
+function zorlugaGoreSec(adaylar: BankSoru[], istenenZorluk?: Zorluk): BankSoru {
+  if (istenenZorluk) {
+    const eslesen = adaylar.find((s) => s.zorluk === istenenZorluk);
+    if (eslesen) return eslesen;
+  }
+  return adaylar[0];
+}
+
+/**
  * Belirli bir konudan kart koşullarına en uygun soruyu seçer.
+ * istenenZorluk yalnızca aynı öncelik basamağındaki adaylar arasında tercih yapar;
+ * eski kuralların (öncelikli soru, tetik, son 3 oturum) önüne geçmez.
  */
 function konudanSoruBul(
   konu: Konu,
@@ -177,7 +191,8 @@ function konudanSoruBul(
   degisiklikler: string[],
   sonSoruIdleri: Set<string>,
   haricIdler: Set<string>,
-  oncelikliSoruId?: string
+  oncelikliSoruId?: string,
+  istenenZorluk?: Zorluk
 ): BankSoru | null {
   const banka = (soruBankasiData.sorular as unknown) as BankSoru[];
   const konununSorulari = banka.filter((s) => s.konu === konu);
@@ -197,26 +212,32 @@ function konudanSoruBul(
       !sonSoruIdleri.has(s.id) &&
       soruTetikUyarMi(s, kart, degisiklikler)
   );
-  if (tazeVeUyan.length > 0) return tazeVeUyan[0];
+  if (tazeVeUyan.length > 0) return zorlugaGoreSec(tazeVeUyan, istenenZorluk);
 
   // 2. Tercih: Koşullara uyan (son 3 oturumda sorulmuş olsa bile alternatif yoksa)
   const uyan = konununSorulari.filter(
     (s) => !haricIdler.has(s.id) && soruTetikUyarMi(s, kart, degisiklikler)
   );
-  if (uyan.length > 0) return uyan[0];
+  if (uyan.length > 0) return zorlugaGoreSec(uyan, istenenZorluk);
 
   // 3. Fallback: Konudaki herhangi bir soru
   const herhangi = konununSorulari.filter((s) => !haricIdler.has(s.id));
-  return herhangi.length > 0 ? herhangi[0] : null;
+  return herhangi.length > 0 ? zorlugaGoreSec(herhangi, istenenZorluk) : null;
 }
 
 /**
  * SE Primer Ana Seçim Algoritması:
- * konuSec(kart, degisiklikler) → 3 soru.
- * 
- * Saf bir fonksiyon olarak çalışır.
+ * konuSec(kart, degisiklikler, zorlukTercihi?) → 3 soru.
+ *
+ * Saf bir fonksiyon olarak çalışır: rastgelelik (yazı-tura) ya da model çağrısı burada yapılmaz,
+ * zorluk tercihi dışarıdan parametre olarak gelir (spec §10). Tercih yalnız 1. ve 3. soruya uygulanır;
+ * 2. soru (değişiklik tetikli) her zaman eski kuralla seçilir. Tercih verilmezse davranış v1 ile aynıdır.
  */
-export function konuSec(kart: ProjeKarti, degisiklikler: string[] = []): SecilmisSoru[] {
+export function konuSec(
+  kart: ProjeKarti,
+  degisiklikler: string[] = [],
+  zorlukTercihi: ZorlukTercihi = {}
+): SecilmisSoru[] {
   const banka = (soruBankasiData.sorular as unknown) as BankSoru[];
   const sonSoruIdleri = getSonOturumSoruIdleri(kart);
   const secilenKonular = new Set<Konu>();
@@ -247,7 +268,7 @@ export function konuSec(kart: ProjeKarti, degisiklikler: string[] = []): Secilmi
       (kart.asama === "fikir" ? "kapsam" : "mimari");
     secilenKonular.add(ogrenmekIstedigi);
 
-    const s1 = konudanSoruBul(ogrenmekIstedigi, kart, degisiklikler, sonSoruIdleri, secilenSoruIdleri);
+    const s1 = konudanSoruBul(ogrenmekIstedigi, kart, degisiklikler, sonSoruIdleri, secilenSoruIdleri, undefined, zorlukTercihi[1]);
     if (s1) {
       secilenSoruIdleri.add(s1.id);
       secilmisSorular.push({
@@ -290,7 +311,7 @@ export function konuSec(kart: ProjeKarti, degisiklikler: string[] = []): Secilmi
       tumKonular.find((k) => !secilenKonular.has(k))!;
 
     secilenKonular.add(asamaKonu);
-    const s3 = konudanSoruBul(asamaKonu, kart, degisiklikler, sonSoruIdleri, secilenSoruIdleri);
+    const s3 = konudanSoruBul(asamaKonu, kart, degisiklikler, sonSoruIdleri, secilenSoruIdleri, undefined, zorlukTercihi[3]);
     if (s3) {
       secilenSoruIdleri.add(s3.id);
       secilmisSorular.push({
@@ -300,10 +321,7 @@ export function konuSec(kart: ProjeKarti, degisiklikler: string[] = []): Secilmi
       });
     }
 
-    return secilmisSorular.map((s) => ({
-      ...s,
-      ipucu: s.ipucu || SORU_IPUCLARI[s.id] || "Sistemin ölçeğini ve uzun vadeli bakımını göz önünde bulundurun.",
-    }));
+    return slotlariIsaretle(secilmisSorular, zorlukTercihi);
   }
 
   // ==========================================
@@ -324,7 +342,9 @@ export function konuSec(kart: ProjeKarti, degisiklikler: string[] = []): Secilmi
     kart,
     degisiklikler,
     sonSoruIdleri,
-    secilenSoruIdleri
+    secilenSoruIdleri,
+    undefined,
+    zorlukTercihi[1]
   );
   if (soru1) {
     secilenSoruIdleri.add(soru1.id);
@@ -450,7 +470,8 @@ export function konuSec(kart: ProjeKarti, degisiklikler: string[] = []): Secilmi
     degisiklikler,
     sonSoruIdleri,
     secilenSoruIdleri,
-    soru3TekrarId
+    soru3TekrarId,
+    zorlukTercihi[3]
   );
   if (soru3) {
     secilenSoruIdleri.add(soru3.id);
@@ -479,8 +500,22 @@ export function konuSec(kart: ProjeKarti, degisiklikler: string[] = []): Secilmi
     }
   }
 
-  return secilmisSorular.map((s) => ({
-    ...s,
-    ipucu: s.ipucu || SORU_IPUCLARI[s.id] || "Sistemin ölçeğini ve uzun vadeli bakımını göz önünde bulundurun.",
-  }));
+  return slotlariIsaretle(secilmisSorular, zorlukTercihi);
+}
+
+/**
+ * İpucunu doldurur, her soruya oturumdaki sırasını (slot) ve o slot için istenen zorluğu yazar.
+ * Gösterilen sorunun gerçek zorluğu `zorluk` alanındadır; istenenle farklıysa kayıtta "yedek" sayılır.
+ */
+function slotlariIsaretle(sorular: SecilmisSoru[], zorlukTercihi: ZorlukTercihi): SecilmisSoru[] {
+  return sorular.map((s, idx) => {
+    const slot = (idx + 1) as 1 | 2 | 3;
+    const istenenZorluk = slot === 1 || slot === 3 ? zorlukTercihi[slot] : undefined;
+    return {
+      ...s,
+      ipucu: s.ipucu || SORU_IPUCLARI[s.id] || "Sistemin ölçeğini ve uzun vadeli bakımını göz önünde bulundurun.",
+      slot,
+      ...(istenenZorluk ? { istenenZorluk } : {}),
+    };
+  });
 }

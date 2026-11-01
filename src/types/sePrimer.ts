@@ -105,10 +105,16 @@ export interface BankSoruTetik {
   her?: boolean;
 }
 
+export type Zorluk = "kolay" | "zor";
+
+/** konuSec'e verilen zorluk tercihi: yalnız 1. (aşama) ve 3. (zayıf konu) slot için. */
+export type ZorlukTercihi = Partial<Record<1 | 3, Zorluk>>;
+
 export interface BankSoru {
   id: string;
   konu: Konu;
   tur: SoruTuru;
+  zorluk?: Zorluk;
   tetik: BankSoruTetik;
   metin: string;
   secenekler?: BankSoruSecenek[] | string[];
@@ -126,4 +132,6 @@ export interface SecilmisSoru extends BankSoru {
   secimNedeni: string;
   oncekiSecimNotu?: string;
   ipucu?: string;
+  slot?: 1 | 2 | 3;          // oturumdaki sıra (1 aşama, 2 değişiklik, 3 zayıf konu)
+  istenenZorluk?: Zorluk;    // konuSec'e verilen tercih (yoksa zorluk eski kuralla belirlendi)
 }
