@@ -243,6 +243,22 @@ değildir** (girdiler yalnızca 10.2'deki 7 özelliktir):
 | | `kural` | Zorluk seçilmedi: 2. soru (değişiklik tetikli) ya da model yüklenemediği için eski `konuSec` kuralı. |
 | | `yedek` | İstenen zorlukta uygun soru yoktu; diğer zorluktaki soru ya da `konuSec` yedeği gösterildi. |
 
+**Kimlik sütunları** (31 Ekim 2026'da eklendi). İki sütun var, ikisi de model girdisi değil:
+
+| Sütun | Değer | Anlamı |
+|---|---|---|
+| `proje_id` | UUID | Proje oluşturulurken (`crypto.randomUUID`) üretilir ve proje kartına kaydedilir. CSV'nin ilk sütunudur. |
+| `oturum_id` | UUID | Her oturum için yeniden üretilir. |
+
+- `proje_id` kişisel veri değildir: kişiden hiçbir bilgi türetilmez, yalnız aynı tarayıcıdaki aynı projenin
+  oturumlarını bir araya getirir.
+- Amacı eğitimde **gruplu bölme** yapmaktır. Aynı kişinin satırları hem eğitim hem test kümesine düşerse model
+  kişiyi ezberler ve test skoru şişer. Bölme `proje_id` grubuna göre yapılır (`StratifiedGroupKFold`, bkz. 10.6).
+- "Örnek projeyle dene" her seferinde yeni bir `proje_id` üretir. İçe aktarılan (JSON) kart kendi `proje_id`'sini
+  korur; v1'den kalan, kimliği olmayan kartlara ilk oturum sonunda yeni kimlik verilir.
+- Projem ekranında, yalnız veri modunda, onay isteyen bir **"Toplanan veriyi sil"** düğmesi vardır. Bu düğme
+  yalnız veri satırlarını (`sePrimer.veri.v1`) siler; proje kartına dokunmaz.
+
 ### 10.5 Yedek davranış
 
 Model yüklenemezse (ağ hatası, dosya yok, çıkarım hatası) eski `konuSec` kuralı değişmeden çalışır.
@@ -251,9 +267,25 @@ Uygulama çökmez ve kullanıcıya hata gösterilmez.
 ### 10.6 Eval ve kabul eşiği
 
 - **Veri:** Yalnızca zor soru satırları (`soru_zorlugu = 1`; etiket yalnızca orada tanımlı).
-- **Bölme:** Stratified %30 hold-out, `random_state = 13`.
+- **Bölme:** `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=13)`, grup = `proje_id`.
+  Aynı kişinin satırları hiçbir zaman hem eğitim hem test katlamasında olmaz; her katlamada `basari` oranı korunmaya çalışılır.
 - **Metrik:** ROC-AUC.
-- **Kabul eşiği: ROC-AUC >= 0.65.** Eşiğin altındaki model yayınlanmaz; `train.py` hata vererek durur.
+- **Kabul eşiği (kapı): 5 katlamanın ortalama ROC-AUC'si >= 0.65.** Eşik değişmedi, yalnız ölçüm yöntemi değişti.
+  Kapı geçilmezse model yayınlanmaz; `train.py` hata vererek durur ve uygulama eski kuralla çalışır.
+- **Bilgi amaçlı raporlananlar** (kapı kararına girmez; `config.json` metriklerine ve model kartına yazılır):
+  - 5 katlamanın AUC standart sapması,
+  - katlama bazında AUC'ler,
+  - yalnız gerçek satırlarda (`kaynak = gercek`) AUC; katlamaların test tahminleri (out-of-fold) üzerinden hesaplanır.
+- **Yayınlanan model:** Kapı geçilirse çapraz doğrulamadaki modellerden biri değil, **tüm veriyle yeniden eğitilen**
+  model yayınlanır. Çapraz doğrulama yalnızca bu eğitim tarifinin genelleme başarısını ölçer.
+- **Sentetik veri:** Sentetik satırlar da `proje_id` taşır; her sahte oyuncu 10–15 satırlık ayrı bir gruptur
+  (Adım 3'te üretilecek). Böylece sentetik oyuncular da gruplar arasında bölünür.
+
+**Değişiklik kaydı — 31 Ekim 2026, eğitimden önce.** Bölme "stratified %30 hold-out" yerine
+"5 katlı StratifiedGroupKFold, grup = `proje_id`" oldu; kapı tek hold-out AUC yerine 5 katlamanın ortalama AUC'si oldu.
+Eşik (0.65) aynı kaldı. **Gerekçe:** Gerçek veride 3–5 kişi var. Gruplu tek bir hold-out'ta test kümesi 1–2 kişiye
+düşer ve kapı kararı, o kişilerin kim olduğuna bağlı olarak şansa kalır. 5 katlı gruplu çapraz doğrulamada her kişi
+bir kez test kümesinde yer alır; ortalama daha kararlı bir ölçüdür, standart sapma da oynaklığı görünür kılar.
 
 ### 10.7 Kabul örnekleri (v2)
 
@@ -271,3 +303,8 @@ Uygulama çökmez ve kullanıcıya hata gösterilmez.
     **Verilen:** `model.onnx` indirilemiyor ya da çalıştırılamıyor.
     **Olduğunda:** uygulama açılır ve sorular seçilir.
     **O zaman:** sorular eski `konuSec` kuralıyla seçilir, uygulama çökmez ve mevcut 7 Cypress testi geçer.
+
+### 10.8 Model kartına girecek sınırlar
+
+- **Az sayıda gerçek kişi, AUC oynak.** Gerçek veri 3–5 kişiden geliyor. Katlama bazında AUC'ler ve standart sapma
+  bu oynaklığı gösterir; ortalama AUC kesin bir başarı ölçüsü olarak okunmamalıdır.
