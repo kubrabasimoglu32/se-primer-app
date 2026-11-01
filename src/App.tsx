@@ -32,6 +32,7 @@ import {
   satirOlustur,
   satirlariEkle,
   satirlariOku,
+  satirlariSil,
   veriModuAcikMi,
   yaziTuraTercihi,
 } from "./primer/veriToplama";
@@ -392,6 +393,10 @@ export default function App() {
             veriModu={veriModu}
             veriSatirSayisi={veriSatirSayisi}
             onVeriIndir={() => csvIndir()}
+            onVeriSil={() => {
+              satirlariSil();
+              setVeriSatirSayisi(0);
+            }}
             onYeniOturum={handleYeniOturum}
             onProjeyiSifirla={handleProjeyiSifirla}
             onProjeYukle={handleProjeYukle}

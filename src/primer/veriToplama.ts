@@ -223,6 +223,15 @@ export function satirlariEkle(yeni: VeriSatiri[]): number {
   return tumu.length;
 }
 
+/** Yalnız toplanan veri satırlarını siler; proje kartına (sePrimer.v1) dokunmaz. */
+export function satirlariSil(): void {
+  try {
+    localStorage.removeItem(VERI_STORAGE_KEY);
+  } catch (error) {
+    console.error("Veri satırları silinemedi:", error);
+  }
+}
+
 function hucre(v: unknown): string {
   const s = v === undefined || v === null ? "" : String(v);
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;

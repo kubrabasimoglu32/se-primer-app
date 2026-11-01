@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronUp,
   Download,
+  Trash2,
   Upload,
   Award,
   FileText,
@@ -41,6 +42,7 @@ interface ProjemScreenProps {
   veriModu?: boolean;
   veriSatirSayisi?: number;
   onVeriIndir?: () => void;
+  onVeriSil?: () => void;
 }
 
 const BECERI_ETIKETLERI: { key: keyof BeceriHaritasi; label: string; aciklama: string }[] = [
@@ -63,6 +65,7 @@ export const ProjemScreen: React.FC<ProjemScreenProps> = ({
   veriModu = false,
   veriSatirSayisi = 0,
   onVeriIndir,
+  onVeriSil,
 }) => {
   const [aktifSekme, setAktifSekme] = useState<"genel" | "beceri" | "kararlar" | "dosyalar">("genel");
   const [genisletilmisOturum, setGenisletilmisOturum] = useState<number | null>(
@@ -359,6 +362,24 @@ export const ProjemScreen: React.FC<ProjemScreenProps> = ({
             <Download className="w-3.5 h-3.5 text-[#92400E]" />
             <span>Veriyi CSV indir</span>
           </button>
+          {onVeriSil && (
+            <button
+              type="button"
+              data-cy="veri-sil"
+              onClick={() => {
+                const onay = window.confirm(
+                  `Bu tarayıcıda toplanan ${veriSatirSayisi} veri satırı kalıcı olarak silinecek. ` +
+                    "Projen ve oturumların silinmez. Önce CSV'yi indirdin mi?"
+                );
+                if (onay) onVeriSil();
+              }}
+              disabled={veriSatirSayisi === 0}
+              className="py-2 px-2.5 bg-[#FFFFFF] hover:bg-[#FEE2E2] text-[#B91C1C] text-xs font-mono font-semibold rounded border border-[#FCA5A5] transition-colors flex items-center justify-center space-x-1.5 disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Toplanan veriyi sil</span>
+            </button>
+          )}
         </div>
       )}
 
