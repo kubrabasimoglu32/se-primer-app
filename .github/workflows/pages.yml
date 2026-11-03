@@ -24,7 +24,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Yerel ortamla aynı: Node 24 + npm 11. Node 22'nin npm 10'u bu kilit dosyasında
+          # peer bağımlılık çakışması (ERESOLVE) verip npm ci'yi durduruyor.
+          node-version: 24
           cache: npm
 
       - name: Bağımlılıkları kur
