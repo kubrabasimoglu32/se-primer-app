@@ -5,6 +5,9 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // GitHub Pages proje sitesi /se-primer-app/ altında yayınlanır.
+    // Yalnız Pages build'inde (GITHUB_PAGES=true) uygulanır; localhost ve AI Studio "/" ile çalışmaya devam eder.
+    base: process.env.GITHUB_PAGES === 'true' ? '/se-primer-app/' : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
