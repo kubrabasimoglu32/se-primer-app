@@ -1,0 +1,7 @@
+proje_id,oturum_id,soru_id,konu,slot,seviye,konu_beceri_puani,konudaki_onceki_soru_sayisi,konudaki_onceki_riskli_sayisi,son_karar_suresi_sn,son_gerekce_uzunlugu,oturum_no,soru_zorlugu,zorluk_kaynagi,karar_suresi_sn,basari,kaynak,p_model
+7200e59a-f6f2-47c6-8e60-d38bbdda56fd,eaab7d9c-2cf8-46c5-842b-a9e793af6495,G-01,guvenlik,1,0,1,0,0,0,0,1,1,yedek,3.46,1,gercek,
+7200e59a-f6f2-47c6-8e60-d38bbdda56fd,eaab7d9c-2cf8-46c5-842b-a9e793af6495,T-01,test,2,0,0,0,0,3.46,0,1,1,kural,4.02,1,gercek,
+7200e59a-f6f2-47c6-8e60-d38bbdda56fd,eaab7d9c-2cf8-46c5-842b-a9e793af6495,D-01,dosyaDuzeni,3,0,2,0,0,4.02,0,1,0,yazitura,5.66,1,gercek,
+7200e59a-f6f2-47c6-8e60-d38bbdda56fd,681e176b-58d1-4730-89a2-0f48f1b62b03,T-02,test,1,0,1,1,0,5.66,0,2,1,yazitura,2.72,1,gercek,
+7200e59a-f6f2-47c6-8e60-d38bbdda56fd,681e176b-58d1-4730-89a2-0f48f1b62b03,Y-01,dagitim,2,0,1,0,0,2.72,0,2,1,kural,4.7,1,gercek,
+7200e59a-f6f2-47c6-8e60-d38bbdda56fd,681e176b-58d1-4730-89a2-0f48f1b62b03,R-02,rapor,3,0,1,0,0,4.7,0,2,1,yazitura,3.4,1,gercek,
