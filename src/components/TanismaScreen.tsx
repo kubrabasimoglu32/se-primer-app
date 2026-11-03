@@ -12,6 +12,8 @@ interface TanismaScreenProps {
   onProjeOlustur: (proje: ProjeKarti) => void;
   onOrnekProjeYukle: () => void;
   onProjeYukle?: (proje: ProjeKarti) => void;
+  /** Veri Toplama Modu (?veri=1): "Örnek projeyle dene" gizlenir; her oyuncu kendi projesiyle başlar. */
+  veriModu?: boolean;
 }
 
 const ASAMA_LISTESI: { value: Asama; label: string }[] = [
@@ -27,6 +29,7 @@ export const TanismaScreen: React.FC<TanismaScreenProps> = ({
   onProjeOlustur,
   onOrnekProjeYukle,
   onProjeYukle,
+  veriModu = false,
 }) => {
   const [ad, setAd] = useState("");
   const [aciklama, setAciklama] = useState("");
@@ -117,6 +120,7 @@ export const TanismaScreen: React.FC<TanismaScreenProps> = ({
       {/* Quick Example Loader Card */}
       <div className="bg-[#FFFFFF] border border-[#CBD5E1] rounded p-4 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.05)] relative overflow-hidden">
         <div className="absolute top-0 left-0 w-1 h-full bg-[#0F172A]" />
+        {!veriModu && (
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center space-x-1.5 text-xs font-mono font-semibold text-[#0F172A]">
@@ -131,8 +135,10 @@ export const TanismaScreen: React.FC<TanismaScreenProps> = ({
             </p>
           </div>
         </div>
+        )}
 
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className={`${veriModu ? "" : "mt-3 "}grid grid-cols-1 sm:grid-cols-2 gap-2`}>
+          {!veriModu && (
           <button
             type="button"
             data-cy="ornek-proje"
@@ -142,6 +148,7 @@ export const TanismaScreen: React.FC<TanismaScreenProps> = ({
             <span>$ load sample_project</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
+          )}
 
           {onProjeYukle && (
             <label className="w-full py-2 px-3 bg-[#FFFFFF] hover:bg-[#F8FAFC] text-[#0F172A] text-xs font-mono font-semibold rounded border border-[#CBD5E1] transition-all flex items-center justify-center space-x-1.5 cursor-pointer">

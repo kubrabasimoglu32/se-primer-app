@@ -366,6 +366,7 @@ export default function App() {
             onProjeOlustur={handleProjeOlustur}
             onOrnekProjeYukle={handleOrnekProjeYukle}
             onProjeYukle={handleProjeYukle}
+            veriModu={veriModu}
           />
         )}
 

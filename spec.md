@@ -254,6 +254,9 @@ değildir** (girdiler yalnızca 10.2'deki 7 özelliktir):
   oturumlarını bir araya getirir.
 - Amacı eğitimde **gruplu bölme** yapmaktır. Aynı kişinin satırları hem eğitim hem test kümesine düşerse model
   kişiyi ezberler ve test skoru şişer. Bölme `proje_id` grubuna göre yapılır (`StratifiedGroupKFold`, bkz. 10.6).
+- Veri modunda tanışma ekranındaki "Örnek projeyle dene" düğmesi **gizlidir** (3 Kasım 2026). Örnek projenin
+  hazır 1. oturumu ve hazır geçmişi vardır; bu düğmeyle başlayan oyuncu `oturum_no = 2`'den başlar ve girdileri
+  kendi kararlarından gelmez. Normal modda düğme yerinde kalır.
 - "Örnek projeyle dene" her seferinde yeni bir `proje_id` üretir. İçe aktarılan (JSON) kart kendi `proje_id`'sini
   korur; v1'den kalan, kimliği olmayan kartlara ilk oturum sonunda yeni kimlik verilir.
 - Projem ekranında, yalnız veri modunda, onay isteyen bir **"Toplanan veriyi sil"** düğmesi vardır. Bu düğme
@@ -276,6 +279,9 @@ Uygulama çökmez ve kullanıcıya hata gösterilmez.
   - 5 katlamanın AUC standart sapması,
   - katlama bazında AUC'ler,
   - yalnız gerçek satırlarda (`kaynak = gercek`) AUC; katlamaların test tahminleri (out-of-fold) üzerinden hesaplanır.
+    Gerçek zor satırlarda `basari` tek sınıfsa (hepsi 0 ya da hepsi 1) AUC tanımsızdır. Bu durumda `train.py`
+    çökmez; `config.json`'a ve model kartına bu AUC **"hesaplanamadı"** olarak yazılır, nedeni (tek sınıf) de belirtilir.
+    Kapı kararı bundan etkilenmez.
 - **Yayınlanan model:** Kapı geçilirse çapraz doğrulamadaki modellerden biri değil, **tüm veriyle yeniden eğitilen**
   model yayınlanır. Çapraz doğrulama yalnızca bu eğitim tarifinin genelleme başarısını ölçer.
 - **Sentetik veri:** Sentetik satırlar da `proje_id` taşır; her sahte oyuncu 10–15 satırlık ayrı bir gruptur
@@ -308,3 +314,8 @@ bir kez test kümesinde yer alır; ortalama daha kararlı bir ölçüdür, stand
 
 - **Az sayıda gerçek kişi, AUC oynak.** Gerçek veri 3–5 kişiden geliyor. Katlama bazında AUC'ler ve standart sapma
   bu oynaklığı gösterir; ortalama AUC kesin bir başarı ölçüsü olarak okunmamalıdır.
+- **İlk iki gerçek oyuncu örnek projeyle başladı.** Bu oyuncularda `oturum_no` 2'den başlar ve ilk girdiler örnek
+  projenin hazır geçmişinden gelir. Satırlar veriden çıkarılmadı (bkz. `data/SOZLUK.md`).
+- **İkinci oyuncuda 3. oturumdan sonra dikkat düşüyor.** Karar süresi 3 saniyenin altına iniyor ve sorular tekrar
+  ediyor (`V-01` her oturumda geliyor). Bu satırlar da veriden çıkarılmadı. Etiketin bir kısmı düşünülerek verilmiş
+  bir karardan değil, hızlıca tıklamaktan geliyor olabilir.

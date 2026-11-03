@@ -8,6 +8,8 @@ const PROJE_ANAHTARI = 'sePrimer.v1'
 function veriModundaAc() {
   cy.visit('/?veri=1')
   cy.get('[data-cy="veri-modu-bandi"]').should('be.visible')
+  // Veri modunda "Örnek projeyle dene" gizli: her oyuncu kendi projesiyle (oturum_no = 1) başlar.
+  cy.get('[data-cy="ornek-proje"]').should('not.exist')
 }
 
 /** Tanışma formunu doldurur; ilk oturumun soruları doğrudan açılır. */

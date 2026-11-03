@@ -31,3 +31,21 @@ Sütunlar CSV'deki sırayla verilmiştir.
 | 18 | `p_model` | 0–1 ya da boş | Model devredeyken tahmin edilen `p(basari)`. Veri toplama modunda boştur. |
 
 Model girdileri yalnızca 6–12 numaralı 7 sütundur (spec §10.2), bu sırayla. Hepsi soru gösterilmeden önce bilinir.
+
+## Birleştirme
+
+Her oyuncunun indirdiği CSV `data/ham/` altına konur ve `python scripts/birlestir.py` ile `data/oturumlar.csv`'de
+birleştirilir. Betik ayırıcıyı (virgül / noktalı virgül / sekme) ve Türkçe Excel'in ondalık virgülünü (`4,19`)
+kendisi tanır. Aynı `(oturum_id, soru_id)` birden fazla kez gelirse ilk satırı tutar. `data/oturumlar.csv`'deki
+sentetik satırlara dokunmaz. Sonunda gerçek oyuncu başına bir özet tablo yazdırır.
+
+## Veriyle ilgili notlar (gerçek oyuncular)
+
+- **İlk iki gerçek oyuncu örnek projeyle başladı.** Bu oyuncularda `oturum_no` 2'den başlar, çünkü örnek projenin
+  hazır bir 1. oturumu vardır. Ayrıca beceri puanları ve önceki soru/riskli sayıları kendi kararlarından değil,
+  örnek projenin hazır geçmişinden gelir. Bu durum sonradan düzeltildi: Veri Toplama Modu'nda (`?veri=1`)
+  "Örnek projeyle dene" düğmesi gizlidir, sonraki oyuncular kendi projeleriyle `oturum_no = 1`'den başlar.
+- **İkinci oyuncuda 3. oturumdan sonra dikkat düşüyor.** Karar süresi (`karar_suresi_sn`) 3 saniyenin altına iniyor
+  ve sorular tekrar ediyor: `V-01` her oturumda geliyor. Bu satırlar okunmadan hızlıca tıklanmış olabilir.
+- **Bu satırlar veriden ÇIKARILMAZ.** Veri olduğu gibi kalır. İki durum model kartına (`model/README.md`)
+  **sınır** olarak yazılır (bkz. `spec.md` §10.8).
