@@ -34,7 +34,37 @@ e2e/
   cypress/e2e/primer.cy.js   7 uçtan uca test
   cypress/e2e/demo.cy.js     Altyazılı demo senaryosu
 src/ ...                     AI Studio ile üretilen uygulama kodu
+data/
+  oturumlar.csv              Eğitim verisi (gerçek + sentetik), birlestir.py üretir
+  sentetik.csv               Sentetik oyuncular, sentetik.py üretir
+  ham/                       Oyunculardan gelen ham CSV'ler (veri modu → "Veriyi CSV indir")
+  SOZLUK.md                  Veri sözlüğü
+scripts/
+  sentetik.py                Sentetik veri üreticisi (seed = 13)
+  birlestir.py               data/ham/*.csv + data/sentetik.csv → data/oturumlar.csv
 ```
+
+## Veri
+
+```
+python scripts/sentetik.py     # data/sentetik.csv (her çalıştırmada aynı dosya)
+python scripts/birlestir.py    # data/oturumlar.csv
+```
+
+**Sentetik veri:** üretici `scripts/sentetik.py`, **tohum `SEED = 13`** (tek bir `random.Random(13)`).
+45 sahte oyuncu var (seviye 0/1/2'den 15'er). Her oyuncu 4–6 oturum oynar, her oturumda 3 soru, toplam 705 satır.
+Sorular uygulamanın `konuSec` kuralıyla seçilir. Slot 1 ve 3'te istenen zorluk yazı-turayla belirlenir; slot 2
+bankadaki zorluğuyla gelir. Girdiler (beceri puanı, önceki soru ve riskli sayısı, son karar süresi ve gerekçe
+uzunluğu, oturum no) uygulamadaki mantıkla oyuncunun önceki satırlarından hesaplanır. Etiket şu olasılıkla çekilir:
+
+```
+z = -0.4 + 0.5*seviye + 0.45*(konu_beceri_puani - 2.5) - 0.7*konudaki_onceki_riskli_sayisi
+    + 0.15*oturum_no + 0.01*son_gerekce_uzunlugu - 0.04*max(0, 8 - son_karar_suresi_sn)
+p(basari=1) = sigmoid(z)        zor satır
+p(basari=1) = sigmoid(z + 1.2)  kolay satır
+```
+
+Kuralın tamamı (karar süresi ve gerekçe uzunluğu dağılımları dahil) `scripts/sentetik.py`'nin başındaki yorumdadır.
 
 ## Nasıl çalışır?
 

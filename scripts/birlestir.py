@@ -6,9 +6,10 @@ Her oyuncu, Projem ekranındaki "Veriyi CSV indir" ile bir dosya gönderir. Dosy
 - Kodlama UTF-8 (BOM'lu ya da BOM'suz) ya da Windows-1254 olabilir.
 
 Aynı (oturum_id, soru_id) birden fazla kez gelirse (ör. oyuncu CSV'yi iki kez indirdiyse) ilk satır tutulur.
-Çıktıda data/oturumlar.csv'de zaten bulunan sentetik satırlar korunur; gerçek satırlar ham dosyalardan yeniden yazılır.
+Sentetik satırlar data/sentetik.csv'den (scripts/sentetik.py) eklenir. O dosya yoksa data/oturumlar.csv'de
+zaten bulunan sentetik satırlar korunur. data/ham/ henüz yoksa yalnız sentetik satırlar yazılır.
 
-Kullanım:  python scripts/birlestir.py [--ham data/ham] [--cikti data/oturumlar.csv]
+Kullanım:  python scripts/birlestir.py [--ham data/ham] [--sentetik data/sentetik.csv] [--cikti data/oturumlar.csv]
 Yalnız standart kütüphane kullanır.
 """
 
@@ -151,12 +152,15 @@ def oyuncu_tablosu(satirlar: list[dict[str, str]]) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description="data/ham/*.csv dosyalarını data/oturumlar.csv'de birleştirir.")
     ap.add_argument("--ham", type=Path, default=KOK / "data" / "ham")
+    ap.add_argument("--sentetik", type=Path, default=KOK / "data" / "sentetik.csv")
     ap.add_argument("--cikti", type=Path, default=KOK / "data" / "oturumlar.csv")
     args = ap.parse_args()
 
-    dosyalar = sorted(args.ham.glob("*.csv"))
+    dosyalar = sorted(args.ham.glob("*.csv")) if args.ham.is_dir() else []
     if not dosyalar:
-        raise SystemExit(f"HATA: {args.ham} içinde CSV yok.")
+        if not args.sentetik.exists():
+            raise SystemExit(f"HATA: {args.ham} içinde CSV yok ve {args.sentetik} da yok.")
+        print(f"UYARI: {args.ham} içinde CSV yok; yalnız sentetik satırlar yazılacak.")
 
     gorulen: dict[tuple[str, str], dict[str, str]] = {}
     tekrar = celisen = 0
@@ -177,18 +181,22 @@ def main() -> int:
     print(f"\nTekrar eden (oturum_id, soru_id) atıldı: {tekrar}", end="")
     print(f" (içeriği farklı olan: {celisen} — ilk gelen tutuldu)" if celisen else "")
 
-    # Çıktıda zaten bulunan sentetik satırları koru (sentetik üretici aynı dosyaya yazar).
+    # Sentetik satırlar: data/sentetik.csv varsa oradan, yoksa çıktıda zaten bulunanlardan.
     sentetik: list[dict[str, str]] = []
-    if args.cikti.exists():
-        mevcut, _ = dosya_oku(args.cikti)
+    kaynak_dosya = args.sentetik if args.sentetik.exists() else (args.cikti if args.cikti.exists() else None)
+    if kaynak_dosya:
+        mevcut, _ = dosya_oku(kaynak_dosya)
         sentetik = [r for r in mevcut if r["kaynak"] == "sentetik" and (r["oturum_id"], r["soru_id"]) not in gorulen]
+        if kaynak_dosya == args.sentetik and len(sentetik) != len(mevcut):
+            raise SystemExit(f"HATA: {args.sentetik} içinde kaynak='sentetik' olmayan ya da gerçek satırla çakışan satır var.")
 
     args.cikti.parent.mkdir(parents=True, exist_ok=True)
     with args.cikti.open("w", encoding="utf-8", newline="") as f:
         yazici = csv.DictWriter(f, fieldnames=SUTUNLAR, lineterminator="\n")
         yazici.writeheader()
         yazici.writerows(birlesik + sentetik)
-    print(f"Yazıldı: {args.cikti} — {len(birlesik)} ham satır + {len(sentetik)} korunan sentetik satır")
+    print(f"Yazıldı: {args.cikti} — {len(birlesik)} ham satır + {len(sentetik)} sentetik satır"
+          f" ({len({r['proje_id'] for r in sentetik})} sentetik oyuncu)")
 
     oyuncu_tablosu(birlesik)
     return 0
