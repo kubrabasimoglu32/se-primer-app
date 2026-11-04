@@ -20,6 +20,7 @@ import {
 } from "./types/sePrimer";
 import { loadProje, saveProje, clearProje, ORNEK_PROJE } from "./services/storage";
 import { konuSec } from "./primer/konuSec";
+import { konuZorluklariniTahminEt, modeliBekle, modeliYukle } from "./primer/model";
 import { analizEtVeKartOlustur, sorulariUyarla } from "./services/api";
 import { onMaskelemeBildirimi } from "./primer/maskele";
 import { EvalScreen } from "./components/EvalScreen";
@@ -55,11 +56,30 @@ export default function App() {
   const [aktifOturumId, setAktifOturumId] = useState<string>("");
   const [veriSatirSayisi, setVeriSatirSayisi] = useState<number>(() => (veriModuAcikMi() ? satirlariOku().length : 0));
 
-  /** Normal modda boş tercih (eski kural); veri modunda 1. ve 3. soru için yazı-tura ve yeni oturum kimliği. */
-  const zorlukTercihiHazirla = () => {
-    if (!veriModu) return {};
-    setAktifOturumId(kimlikUret());
-    return yaziTuraTercihi();
+  // Zorluk modeli uygulama açılınca bir kez, arka planda yüklenir (spec §10.5: yüklenemezse eski kural).
+  useEffect(() => {
+    void modeliYukle();
+  }, []);
+
+  /**
+   * Oturumun 3 sorusunu seçer (spec §10.3 / §10.4 / §10.5).
+   * - Veri modu: 1. ve 3. soru için yazı-tura + yeni oturum kimliği; model karar vermez (Shadow, p_model'e yazar).
+   * - Normal mod: model hazırsa (en fazla ~3 sn beklenir) 8 konu için p(basari) → konu başına zorluk haritası;
+   *   konuSec 1. ve 3. soruda bunu kullanır, 2. soru eski kural. Model yoksa ya da hata verirse eski konuSec.
+   */
+  const sorulariSec = async (kart: ProjeKarti, degisiklikler: string[]): Promise<SecilmisSoru[]> => {
+    if (veriModu) {
+      setAktifOturumId(kimlikUret());
+      return konuSec(kart, degisiklikler, yaziTuraTercihi()).map((s) =>
+        s.istenenZorluk ? { ...s, tercihKaynagi: "yazitura" as const } : s
+      );
+    }
+    const model = await modeliBekle();
+    const tahmin = model ? await konuZorluklariniTahminEt(model, kart) : null;
+    if (!tahmin) return konuSec(kart, degisiklikler);
+    return konuSec(kart, degisiklikler, {}, tahmin.harita).map((s) =>
+      s.istenenZorluk ? { ...s, tercihKaynagi: "model" as const, pModel: tahmin.p[s.konu] } : s
+    );
   };
 
   // Gizli eval modu kontrolü (?eval=1)
@@ -112,7 +132,6 @@ export default function App() {
   const handleProjeOlustur = async (temelProje: ProjeKarti) => {
     setHazirlaniyor(true);
     setHazirlaniyorMesaji("Proje kartı ve ilk mimari riskler analiz ediliyor...");
-    const zorlukTercihi = zorlukTercihiHazirla();
     const projeId = kimlikUret();
 
     try {
@@ -128,7 +147,7 @@ export default function App() {
       };
 
       // 2. Soru seçimi (hangi konu) KODDA kalır, Gemini'ye bırakılmaz
-      const secilenSorular = konuSec(tamProje, ["plan"], zorlukTercihi);
+      const secilenSorular = await sorulariSec(tamProje, ["plan"]);
 
       setHazirlaniyorMesaji("Sorular projenize özel uyarlanıyor...");
 
@@ -144,7 +163,7 @@ export default function App() {
     } catch (error) {
       console.warn("Proje oluşturma akışında hata, yerel verilerle devam ediliyor:", error);
       const yerelProje: ProjeKarti = { ...temelProje, projeId };
-      const secilenSorular = konuSec(yerelProje, ["plan"], zorlukTercihi);
+      const secilenSorular = await sorulariSec(yerelProje, ["plan"]);
       setProje(yerelProje);
       saveProje(yerelProje);
       setAktifSorular(secilenSorular);
@@ -171,12 +190,11 @@ export default function App() {
 
     setHazirlaniyor(true);
     setHazirlaniyorMesaji("Seçilen sorular projenize özel uyarlanıyor...");
-    const zorlukTercihi = zorlukTercihiHazirla();
+
+    // 1. Soru seçimi KODDA kalır (bir kez: veri modunda yazı-tura ve oturum kimliği tekrar üretilmesin)
+    const secilenSorular = await sorulariSec(proje, degisiklikler);
 
     try {
-      // 1. Soru seçimi KODDA kalır
-      const secilenSorular = konuSec(proje, degisiklikler, zorlukTercihi);
-
       // 2. POST /api/soru-uyarla çağrısı
       const uyarlanmisSorular = await sorulariUyarla(proje, secilenSorular);
 
@@ -186,7 +204,6 @@ export default function App() {
       setEkran("soru");
     } catch (error) {
       console.warn("Soru uyarlama çağrısında hata, bankadaki orijinal sorular kullanılıyor:", error);
-      const secilenSorular = konuSec(proje, degisiklikler, zorlukTercihi);
       setAktifSorular(secilenSorular);
       setBekleyenDegisiklikler(degisiklikler);
       setBekleyenNot(notMetni);
@@ -204,7 +221,8 @@ export default function App() {
     eklenenRiskler: string[],
     kapatilanRiskler: string[],
     genelOturumNotu?: string,
-    gosterimOzellikleri?: OzellikVektoru[]
+    gosterimOzellikleri?: OzellikVektoru[],
+    gosterimTahminleri?: (number | undefined)[]
   ) => {
     if (!proje) return;
 
@@ -217,7 +235,7 @@ export default function App() {
         const soru = aktifSorular[idx];
         if (!soru) return [];
         const ozellik = gosterimOzellikleri?.[idx] ?? ozellikleriHesapla(proje, soru.konu, undefined);
-        return [satirOlustur(projeId, aktifOturumId || kimlikUret(), soru, cevap, ozellik, soru.slot ?? idx + 1)];
+        return [satirOlustur(projeId, aktifOturumId || kimlikUret(), soru, cevap, ozellik, soru.slot ?? idx + 1, gosterimTahminleri?.[idx])];
       });
       setVeriSatirSayisi(satirlariEkle(satirlar));
     }

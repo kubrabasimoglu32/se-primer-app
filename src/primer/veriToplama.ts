@@ -37,6 +37,17 @@ export interface OzellikVektoru {
   oturum_no: number;
 }
 
+/** spec §10.2 — model girdilerinin sabit sırası (config.json "features" ile aynı olmalı). */
+export const OZELLIK_SIRASI: (keyof OzellikVektoru)[] = [
+  "seviye",
+  "konu_beceri_puani",
+  "konudaki_onceki_soru_sayisi",
+  "konudaki_onceki_riskli_sayisi",
+  "son_karar_suresi_sn",
+  "son_gerekce_uzunlugu",
+  "oturum_no",
+];
+
 /** Bir önceki cevaptan "son_" özellikleri için gereken iki ölçüm. */
 export interface OncekiOlcum {
   kararSuresiSn?: number;
@@ -54,7 +65,7 @@ export interface VeriSatiri extends OzellikVektoru {
   karar_suresi_sn: number;
   basari: 0 | 1;
   kaynak: "gercek" | "sentetik";
-  p_model: string; // v2 modeli devreye girene kadar boş
+  p_model: string; // modelin p(basari) tahmini (Shadow); model yüklenmediyse boş
 }
 
 /** CSV sütun sırası: kimlik → 7 özellik (spec §10.2) → soru_zorlugu → kayıt/etiket sütunları. */
@@ -163,13 +174,12 @@ export function ozellikleriHesapla(
 
 // --------------------------------------------------------------------------- satır
 
-/** İstenen zorluk yoksa "kural"; gösterilen = istenen ise tercihin kaynağı; değilse "yedek". */
+/** İstenen zorluk yoksa "kural"; gösterilen = istenen ise tercihin kaynağı (yazı-tura ya da model); değilse "yedek". */
 export function zorlukKaynagiBul(
-  soru: Pick<SecilmisSoru, "istenenZorluk" | "zorluk">,
-  tercihKaynagi: "yazitura" | "model"
+  soru: Pick<SecilmisSoru, "istenenZorluk" | "zorluk" | "tercihKaynagi">
 ): ZorlukKaynagi {
   if (!soru.istenenZorluk) return "kural";
-  return soru.zorluk === soru.istenenZorluk ? tercihKaynagi : "yedek";
+  return soru.zorluk === soru.istenenZorluk ? soru.tercihKaynagi ?? "yazitura" : "yedek";
 }
 
 /** Etiket: karar sorusunda düşük risk = 1, kontrol sorusunda "Evet" (riskDerecesi "dusuk") = 1. */
@@ -183,7 +193,8 @@ export function satirOlustur(
   soru: SecilmisSoru,
   cevap: SoruCevap,
   ozellik: OzellikVektoru,
-  slot: number
+  slot: number,
+  pModel?: number
 ): VeriSatiri {
   return {
     proje_id: projeId,
@@ -193,11 +204,12 @@ export function satirOlustur(
     slot,
     ...ozellik,
     soru_zorlugu: soru.zorluk === "zor" ? 1 : 0,
-    zorluk_kaynagi: zorlukKaynagiBul(soru, "yazitura"),
+    zorluk_kaynagi: zorlukKaynagiBul(soru),
     karar_suresi_sn: yuvarla(cevap.kararSuresiSn ?? 0),
     basari: basariBul(cevap),
     kaynak: "gercek",
-    p_model: "",
+    // Shadow (veri modu): modelin bu satırın kendi girdileriyle tahmini; model yoksa boş.
+    p_model: pModel === undefined ? "" : pModel.toFixed(6),
   };
 }
 

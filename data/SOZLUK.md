@@ -28,7 +28,7 @@ Sütunlar CSV'deki sırayla verilmiştir.
 | 15 | `karar_suresi_sn` | saniye | Soru ekrana geldiği an → son seçenek seçildiği an. Bu satırın kendi süresi; bu satır için girdi **değildir** (sızıntı), sonraki satırın `son_karar_suresi_sn`'i olur. |
 | 16 | `basari` | 0 / 1 | **Etiket.** Karar sorusunda düşük riskli seçenek = 1; kontrol sorusunda "Evet" = 1; diğerleri 0. |
 | 17 | `kaynak` | metin | `gercek` (uygulamada gerçek kişi) ya da `sentetik` (üretici betik; kural ve tohum README'de). |
-| 18 | `p_model` | 0–1 ya da boş | Model devredeyken tahmin edilen `p(basari)`. Veri toplama modunda boştur. |
+| 18 | `p_model` | 0–1 ya da boş | **Shadow** (v2.0'dan itibaren): veri toplama modunda model yüklüyse, modelin bu satırın kendi girdileriyle (6–12) tahmin ettiği `p(basari)`, 6 ondalık. Zorluk yine yazı-turayla seçilir; `p_model` karara girmez. Model yüklenemediyse ve v2.0'dan önce toplanan satırlarda boştur. Model girdisi **değildir**. |
 
 Model girdileri yalnızca 6–12 numaralı 7 sütundur (spec §10.2), bu sırayla. Hepsi soru gösterilmeden önce bilinir.
 

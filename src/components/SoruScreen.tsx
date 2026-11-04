@@ -37,6 +37,7 @@ import {
   ozellikleriHesapla,
   sonOlcumuBul,
 } from "../primer/veriToplama";
+import { hazirModeliAl } from "../primer/model";
 
 interface SoruScreenProps {
   kart: ProjeKarti;
@@ -50,7 +51,8 @@ interface SoruScreenProps {
     eklenenRiskler: string[],
     kapatilanRiskler: string[],
     genelOturumNotu?: string,
-    gosterimOzellikleri?: OzellikVektoru[]
+    gosterimOzellikleri?: OzellikVektoru[],
+    gosterimTahminleri?: (number | undefined)[]
   ) => void;
 }
 
@@ -153,6 +155,9 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
   // Özellikler oturum başındaki karttan ve bir önceki cevabın ölçümünden hesaplanır; bu sorunun cevabını görmez.
   const gosterimAnlari = useRef<Record<number, number>>({});
   const gosterimOzellikleri = useRef<Record<number, OzellikVektoru>>({});
+  // Shadow (spec §10.4): model hazırsa bu satırın kendi girdileriyle p(basari); veri modunda p_model'e yazılır.
+  // Kararı etkilemez; model hazır değilse ya da hata verirse boş kalır.
+  const gosterimTahminleri = useRef<Record<number, number>>({});
 
   useEffect(() => {
     if (!aktifSoru || gosterimAnlari.current[aktifSoruIndeks] !== undefined) return;
@@ -163,7 +168,18 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
           kararSuresiSn: cevaplar[aktifSoruIndeks - 1]?.kararSuresiSn,
           gerekceUzunlugu: (cevaplar[aktifSoruIndeks - 1]?.kullaniciGerekcesi || "").trim().length,
         });
-    gosterimOzellikleri.current[aktifSoruIndeks] = ozellikleriHesapla(kart, aktifSoru.konu, onceki);
+    const ozellik = ozellikleriHesapla(kart, aktifSoru.konu, onceki);
+    gosterimOzellikleri.current[aktifSoruIndeks] = ozellik;
+    const model = hazirModeliAl();
+    if (model) {
+      const indeks = aktifSoruIndeks;
+      model
+        .tahminEt([ozellik])
+        .then(([p]) => {
+          if (Number.isFinite(p)) gosterimTahminleri.current[indeks] = p;
+        })
+        .catch((hata) => console.warn("Shadow tahmini yapılamadı:", hata));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aktifSoruIndeks, aktifSoru]);
 
@@ -510,7 +526,8 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
       eklenenRiskler,
       kapatilanRiskler,
       genelOturumNotu,
-      calismaSorulari.map((_, idx) => gosterimOzellikleri.current[idx])
+      calismaSorulari.map((_, idx) => gosterimOzellikleri.current[idx]),
+      calismaSorulari.map((_, idx) => gosterimTahminleri.current[idx])
     );
   };
 
@@ -588,6 +605,37 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
             <span className="text-xs">{aktifSoru.secimNedeni}</span>
           </div>
         </div>
+
+        {/* Zorluk modeli notu (spec §10.3): gerçekte gösterilen sorunun zorluğuna göre yazılır */}
+        {aktifSoru.tercihKaynagi === "model" && aktifSoru.pModel !== undefined && (
+          <div
+            data-cy="model-notu"
+            className="p-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded flex items-center justify-between text-xs"
+          >
+            <span className="flex items-center space-x-1.5 text-[#0F172A] font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-[#D97706]" />
+              <span>{aktifSoru.zorluk === "zor" ? "Primer seni zorluyor" : "Primer temelden alıyor"}</span>
+            </span>
+            <span className="font-mono text-[10px] text-[#515F74] space-x-2">
+              <span>
+                p = <span data-cy="p">{aktifSoru.pModel.toFixed(4)}</span>
+              </span>
+              <span>
+                · <span data-cy="zorluk">{aktifSoru.zorluk}</span>
+              </span>
+            </span>
+          </div>
+        )}
+
+        {/* Değişiklik tetikli soru notu (spec §10.7 örnek 9) */}
+        {aktifSoru.degisiklikNotu && (
+          <div
+            data-cy="degisiklik-notu"
+            className="p-2.5 bg-[#F1F5F9] border border-[#CBD5E1] rounded text-xs text-[#334155]"
+          >
+            {aktifSoru.degisiklikNotu}
+          </div>
+        )}
 
         {/* Geçen Sefer Seçimi Hatırlatması */}
         {aktifSoru.oncekiSecimNotu && (
@@ -855,6 +903,23 @@ export const SoruScreen: React.FC<SoruScreenProps> = ({
             )}
           </div>
         )}
+
+        {/* ======================================================= */}
+        {/* DERİNLEŞ (spec §10.3): model "zor" dediği için gelen zor soruda, cevaptan sonra */}
+        {/* ======================================================= */}
+        {cevaplandi &&
+          aktifSoru.tercihKaynagi === "model" &&
+          aktifSoru.istenenZorluk === "zor" &&
+          aktifSoru.zorluk === "zor" &&
+          aktifSoru.derinles && (
+            <div
+              data-cy="derinles"
+              className="p-3 bg-[#FFFBEB] border border-[#FCD34D] rounded text-xs text-[#92400E] space-y-1 animate-fadeIn"
+            >
+              <strong className="font-mono text-[10px] uppercase block">DERİNLEŞ</strong>
+              <p className="leading-relaxed">{aktifSoru.derinles}</p>
+            </div>
+          )}
 
         {/* ======================================================= */}
         {/* 6. R-02 NOT ALANI VARSA: İSTEĞE BAĞLI KARAR NOTU ALANI  */}

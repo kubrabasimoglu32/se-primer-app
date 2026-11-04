@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BankSoru, Konu, ProjeKarti, SecilmisSoru, Zorluk, ZorlukTercihi } from "../types/sePrimer";
+import { BankSoru, Konu, KonuZorlukHaritasi, ProjeKarti, SecilmisSoru, Zorluk, ZorlukTercihi } from "../types/sePrimer";
 import soruBankasiData from "../data/soruBankasi.json";
 
 const ASAMA_KONULARI: Record<string, Konu[]> = {
@@ -22,6 +22,16 @@ const DEGISIKLIK_HARITASI: Record<string, { konu: Konu; soruId?: string }> = {
   testEkledim: { konu: "test", soruId: "T-01" },
   yayinaAldim: { konu: "dagitim", soruId: "Y-01" },
   hataCikti: { konu: "rapor", soruId: "R-03" },
+};
+
+/** Değişiklik tetikli 2. soruda gösterilen not (spec §10.7 örnek 9). */
+const DEGISIKLIK_NOTLARI: Record<string, string> = {
+  yeniOzellik: "Yeni bir özellik ya da API eklediğini söyledin.",
+  plan: "Kapsamın ya da teslim planının değiştiğini söyledin.",
+  veriTabani: "Veri tabanı yapını değiştirdiğini söyledin.",
+  testEkledim: "Test yazdığını söyledin.",
+  yayinaAldim: "Projeyi yayına aldığını söyledin.",
+  hataCikti: "Kritik bir hata çıkıp düzeltildiğini söyledin.",
 };
 
 export const SORU_IPUCLARI: Record<string, string> = {
@@ -232,12 +242,20 @@ function konudanSoruBul(
  * Saf bir fonksiyon olarak çalışır: rastgelelik (yazı-tura) ya da model çağrısı burada yapılmaz,
  * zorluk tercihi dışarıdan parametre olarak gelir (spec §10). Tercih yalnız 1. ve 3. soruya uygulanır;
  * 2. soru (değişiklik tetikli) her zaman eski kuralla seçilir. Tercih verilmezse davranış v1 ile aynıdır.
+ *
+ * İki tür tercih var:
+ * - zorlukTercihi: slot başına (Veri Toplama Modu'nda yazı-tura).
+ * - konuZorluk: konu başına (zorluk modeli, spec §10.3). Slot 1 ve 3'ün konusu bu fonksiyonda belirlendiği için
+ *   model 8 konunun hepsi için karar verir, burada o slotun konusuna ait değer kullanılır.
+ * İkisi birden verilirse slot tercihi önce gelir.
  */
 export function konuSec(
   kart: ProjeKarti,
   degisiklikler: string[] = [],
-  zorlukTercihi: ZorlukTercihi = {}
+  zorlukTercihi: ZorlukTercihi = {},
+  konuZorluk: KonuZorlukHaritasi = {}
 ): SecilmisSoru[] {
+  const istenen = (slot: 1 | 3, konu: Konu): Zorluk | undefined => zorlukTercihi[slot] ?? konuZorluk[konu];
   const banka = (soruBankasiData.sorular as unknown) as BankSoru[];
   const sonSoruIdleri = getSonOturumSoruIdleri(kart);
   const secilenKonular = new Set<Konu>();
@@ -268,7 +286,7 @@ export function konuSec(
       (kart.asama === "fikir" ? "kapsam" : "mimari");
     secilenKonular.add(ogrenmekIstedigi);
 
-    const s1 = konudanSoruBul(ogrenmekIstedigi, kart, degisiklikler, sonSoruIdleri, secilenSoruIdleri, undefined, zorlukTercihi[1]);
+    const s1 = konudanSoruBul(ogrenmekIstedigi, kart, degisiklikler, sonSoruIdleri, secilenSoruIdleri, undefined, istenen(1, ogrenmekIstedigi));
     if (s1) {
       secilenSoruIdleri.add(s1.id);
       secilmisSorular.push({
@@ -311,7 +329,7 @@ export function konuSec(
       tumKonular.find((k) => !secilenKonular.has(k))!;
 
     secilenKonular.add(asamaKonu);
-    const s3 = konudanSoruBul(asamaKonu, kart, degisiklikler, sonSoruIdleri, secilenSoruIdleri, undefined, zorlukTercihi[3]);
+    const s3 = konudanSoruBul(asamaKonu, kart, degisiklikler, sonSoruIdleri, secilenSoruIdleri, undefined, istenen(3, asamaKonu));
     if (s3) {
       secilenSoruIdleri.add(s3.id);
       secilmisSorular.push({
@@ -321,7 +339,7 @@ export function konuSec(
       });
     }
 
-    return slotlariIsaretle(secilmisSorular, zorlukTercihi);
+    return slotlariIsaretle(secilmisSorular, zorlukTercihi, konuZorluk);
   }
 
   // ==========================================
@@ -344,7 +362,7 @@ export function konuSec(
     sonSoruIdleri,
     secilenSoruIdleri,
     undefined,
-    zorlukTercihi[1]
+    istenen(1, soru1Konu)
   );
   if (soru1) {
     secilenSoruIdleri.add(soru1.id);
@@ -364,6 +382,7 @@ export function konuSec(
   let soru2Konu: Konu | null = null;
   let soru2OzelId: string | undefined = undefined;
   let soru2Nedeni = "Son oturumdan bu yana yapılan değişiklik";
+  let soru2Notu: string | undefined = undefined;
 
   // Eşleşen bir değişiklik var mı?
   for (const deg of degisiklikler) {
@@ -372,6 +391,7 @@ export function konuSec(
       soru2Konu = eslesme.konu;
       soru2OzelId = eslesme.soruId;
       soru2Nedeni = `İşaretlediğin '${deg}' değişikliği tetikledi`;
+      soru2Notu = DEGISIKLIK_NOTLARI[deg];
       break;
     }
   }
@@ -420,6 +440,7 @@ export function konuSec(
       ...soru2,
       metin: metinDoldur(soru2, kart),
       secimNedeni: soru2Nedeni,
+      ...(soru2Notu ? { degisiklikNotu: soru2Notu } : {}),
     });
   }
 
@@ -471,7 +492,7 @@ export function konuSec(
     sonSoruIdleri,
     secilenSoruIdleri,
     soru3TekrarId,
-    zorlukTercihi[3]
+    istenen(3, soru3Konu)
   );
   if (soru3) {
     secilenSoruIdleri.add(soru3.id);
@@ -500,17 +521,21 @@ export function konuSec(
     }
   }
 
-  return slotlariIsaretle(secilmisSorular, zorlukTercihi);
+  return slotlariIsaretle(secilmisSorular, zorlukTercihi, konuZorluk);
 }
 
 /**
  * İpucunu doldurur, her soruya oturumdaki sırasını (slot) ve o slot için istenen zorluğu yazar.
  * Gösterilen sorunun gerçek zorluğu `zorluk` alanındadır; istenenle farklıysa kayıtta "yedek" sayılır.
  */
-function slotlariIsaretle(sorular: SecilmisSoru[], zorlukTercihi: ZorlukTercihi): SecilmisSoru[] {
+function slotlariIsaretle(
+  sorular: SecilmisSoru[],
+  zorlukTercihi: ZorlukTercihi,
+  konuZorluk: KonuZorlukHaritasi
+): SecilmisSoru[] {
   return sorular.map((s, idx) => {
     const slot = (idx + 1) as 1 | 2 | 3;
-    const istenenZorluk = slot === 1 || slot === 3 ? zorlukTercihi[slot] : undefined;
+    const istenenZorluk = slot === 1 || slot === 3 ? zorlukTercihi[slot] ?? konuZorluk[s.konu] : undefined;
     return {
       ...s,
       ipucu: s.ipucu || SORU_IPUCLARI[s.id] || "Sistemin ölçeğini ve uzun vadeli bakımını göz önünde bulundurun.",

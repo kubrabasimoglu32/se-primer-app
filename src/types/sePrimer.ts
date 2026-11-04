@@ -118,6 +118,9 @@ export type Zorluk = "kolay" | "zor";
 /** konuSec'e verilen zorluk tercihi: yalnız 1. (aşama) ve 3. (zayıf konu) slot için. */
 export type ZorlukTercihi = Partial<Record<1 | 3, Zorluk>>;
 
+/** Modelin konu başına zorluk kararı (spec §10.3): konuSec 1. ve 3. soruda o konunun değerini kullanır. */
+export type KonuZorlukHaritasi = Partial<Record<Konu, Zorluk>>;
+
 export interface BankSoru {
   id: string;
   konu: Konu;
@@ -134,6 +137,8 @@ export interface BankSoru {
   gerekceAlani?: boolean;
   notAlani?: string;
   ipucu?: string;
+  /** Yalnız zor sorularda: model "zor" dediği için gelen soruda cevaptan sonra gösterilen Sokratik takip sorusu. */
+  derinles?: string;
 }
 
 export interface SecilmisSoru extends BankSoru {
@@ -142,4 +147,7 @@ export interface SecilmisSoru extends BankSoru {
   ipucu?: string;
   slot?: 1 | 2 | 3;          // oturumdaki sıra (1 aşama, 2 değişiklik, 3 zayıf konu)
   istenenZorluk?: Zorluk;    // konuSec'e verilen tercih (yoksa zorluk eski kuralla belirlendi)
+  tercihKaynagi?: "yazitura" | "model"; // istenen zorluğu kim belirledi (yalnız slot 1 ve 3)
+  pModel?: number;           // modelin bu konu için p(basari) tahmini (seçim anında; tercihKaynagi = "model")
+  degisiklikNotu?: string;   // değişiklik tetikli 2. soruda öğrenciye gösterilen not (spec §10.7 örnek 9)
 }
