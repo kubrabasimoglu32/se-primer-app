@@ -153,3 +153,15 @@ x = np.array([[0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 2.0]], dtype=np.float32)  # {"seviy
 p = oturum.run(["probabilities"], {"input": x})[0][0, 1]
 zorluk = "zor" if p >= 0.5 else "kolay"
 ```
+
+Hub'dan indirirken `main` dalını değil, **sabit bir commit'i** kullanın (sürümler ve commit'ler: `RELEASE.md`):
+
+```
+https://huggingface.co/<repo_id>/resolve/<commit>/model.onnx
+https://huggingface.co/<repo_id>/resolve/<commit>/config.json
+```
+
+```python
+from huggingface_hub import hf_hub_download
+yol = hf_hub_download("<repo_id>", "model.onnx", revision="v2.0")  # etiket ya da commit hash'i
+```

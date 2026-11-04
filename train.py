@@ -472,6 +472,18 @@ x = np.array([[{", ".join(str(f["example"]) for f in config["features"])}]], dty
 p = oturum.run(["probabilities"], {{"input": x}})[0][0, 1]
 zorluk = "zor" if p >= {config["esik"]} else "kolay"
 ```
+
+Hub'dan indirirken `main` dalını değil, **sabit bir commit'i** kullanın (sürümler ve commit'ler: `RELEASE.md`):
+
+```
+https://huggingface.co/<repo_id>/resolve/<commit>/model.onnx
+https://huggingface.co/<repo_id>/resolve/<commit>/config.json
+```
+
+```python
+from huggingface_hub import hf_hub_download
+yol = hf_hub_download("<repo_id>", "model.onnx", revision="v2.0")  # etiket ya da commit hash'i
+```
 """
 
 

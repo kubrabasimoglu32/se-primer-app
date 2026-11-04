@@ -15,6 +15,7 @@ yolun sonucunu ve nedenini gösterir. Proje bitene kadar öğrencinin gelişimin
 |---|---|
 | Uygulama (AI Studio) | https://ai.studio/apps/8074a940-e9fe-4c74-96fc-ff23a83151f5?fullscreenApplet=true|
 | Demo videosu (60 sn, Cypress) | https://youtu.be/ScYtHzTFs4Q |
+| Hugging Face model (v2.0, commit'e sabit) | https://huggingface.co/Kubra37/se-primer-zorluk/tree/28818c9b19f5ab928c1292ba930096f43def4446 |
 
 > **Erişim notu:** Uygulama AI Studio'da paylaşıldı. Bazı Google hesaplarında yaş doğrulaması ya da AI Studio
 > kullanım şartlarının kabul edilmemiş olması nedeniyle link açılmayabilir. Açılmazsa e-posta adresinizi
@@ -43,6 +44,9 @@ scripts/
   sentetik.py                Sentetik veri üreticisi (seed = 13)
   birlestir.py               data/ham/*.csv + data/sentetik.csv → data/oturumlar.csv
 train.py                     Eğitim + eval kapısı (spec §10.6) + ONNX paketi
+scripts/yayinla.py           model/ → Hugging Face (v2.0 etiketi, commit'e sabit URL, doğrulama)
+src/primer/modelKaynak.ts    Uygulamanın kullandığı model sürümü ve commit'e sabit URL'ler
+RELEASE.md                   Sürüm notları, geri alma, devreye alma planı, ödünleşim matrisi
 requirements.txt             Python 3.12 bağımlılıkları (sürümler sabit)
 model/
   model.onnx                 Zorluk modeli (train.py üretir)
