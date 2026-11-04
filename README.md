@@ -5,7 +5,8 @@
 SE Primer, yazılım mühendisliği öğrencisinin kendi projesini tanıyan ve proje büyüdükçe ona projesi hakkında
 sorular soran bir öğrenme asistanı. Her girişte "Ne değişti?" diye sorar. Projenin aşamasına, yapılan
 değişikliklere ve öğrencinin zayıf olduğu konulara göre 3 soru seçer. Cevabı söylemez: seçenek sunar, seçilen
-yolun sonucunu ve nedenini gösterir. Proje bitene kadar öğrencinin gelişimini kaydeder.
+yolun sonucunu ve nedenini gösterir. Proje bitene kadar öğrencinin gelişimini kaydeder. **v2'de** küçük bir model,
+öğrencinin davranışından sorunun kolay mı zor mu olacağına karar verir.
 
 İlham: Neal Stephenson, *The Diamond Age*. Okuyan çocuğa göre kendini yeniden yazan kitap.
 
@@ -13,82 +14,158 @@ yolun sonucunu ve nedenini gösterir. Proje bitene kadar öğrencinin gelişimin
 
 | | |
 |---|---|
-| Uygulama (AI Studio) | https://ai.studio/apps/8074a940-e9fe-4c74-96fc-ff23a83151f5?fullscreenApplet=true|
-| Demo videosu (60 sn, Cypress) | https://youtu.be/ScYtHzTFs4Q |
-| Hugging Face model (v2.0.1, commit'e sabit) | https://huggingface.co/Kubra37/se-primer-zorluk/tree/576e42b0e833d418d13c3fe9e528e4194466b8f5 |
+| GitHub repo | https://github.com/kubrabasimoglu32/se-primer-app |
+| **Canlı uygulama (GitHub Pages)** | https://kubrabasimoglu32.github.io/se-primer-app/ |
+| Veri Toplama Modu · Parite sayfası | https://kubrabasimoglu32.github.io/se-primer-app/?veri=1 · https://kubrabasimoglu32.github.io/se-primer-app/?parite=1 |
+| Hugging Face model sayfası | https://huggingface.co/Kubra37/se-primer-zorluk |
+| Hugging Face model (v2.0.1, commit'e sabit) | https://huggingface.co/Kubra37/se-primer-zorluk/resolve/576e42b0e833d418d13c3fe9e528e4194466b8f5/model.onnx |
+| Demo videosu (v2) | _eklenecek_ |
+| Uygulama (AI Studio, ikincil) | https://ai.studio/apps/8074a940-e9fe-4c74-96fc-ff23a83151f5?fullscreenApplet=true |
+| v1 demo videosu (geçen hafta) | https://youtu.be/ScYtHzTFs4Q |
 
-> **Erişim notu:** Uygulama AI Studio'da paylaşıldı. Bazı Google hesaplarında yaş doğrulaması ya da AI Studio
-> kullanım şartlarının kabul edilmemiş olması nedeniyle link açılmayabilir. Açılmazsa e-posta adresinizi
-> bildirmeniz yeterli, erişim eklerim.
+> GitHub Pages'te sunucu yoktur: yapay zekâ (Gemini) çağrıları çalışmaz, uygulama soru bankası ve yedek metinlerle
+> çalışır. Zorluk modeli tarayıcıda çalıştığı için Pages'te de devrededir. AI Studio linki bazı Google hesaplarında
+> (yaş doğrulaması / şartların kabulü) açılmayabilir.
+
+## Kurulum (Windows, en fazla 3 komut)
+
+Gerekenler: Node.js 24, Python 3.12, Chrome. Proje kökünde, PowerShell'de:
+
+```powershell
+npm ci; npm --prefix e2e ci                                                        # 1. uygulama + Cypress
+py -3.12 -m venv .venv; .venv\Scripts\python -m pip install -r requirements.txt    # 2. Python (.venv)
+npm test                                                                           # 3. 15 uçtan uca test
+```
+
+`npm test` sunucuyu kendisi açar (`npm run dev`, localhost:3000), Cypress testlerini çalıştırır ve sunucuyu kapatır.
+
+### Ayrıntılı komutlar
+
+| Ne | Komut |
+|---|---|
+| Uygulamayı çalıştır | `npm run dev` → http://localhost:3000 (`?veri=1` Veri Toplama Modu, `?parite=1` parite sayfası) |
+| Sentetik veri üret | `.venv\Scripts\python scripts/sentetik.py` → `data/sentetik.csv` (her çalıştırmada aynı dosya) |
+| Gerçek + sentetik veriyi birleştir | `.venv\Scripts\python scripts/birlestir.py` → `data/oturumlar.csv` |
+| Eğit, ölç, paketle | `.venv\Scripts\python train.py` → `model/` (eval kapısı geçilmezse hata koduyla durur, `model/`'e yazmaz) |
+| Hugging Face'e yayınla | `.venv\Scripts\python scripts/yayinla.py --surum … --mesaj … [--onceki …]` (önce `.venv\Scripts\hf auth login`) |
+| Parite kahini | `.venv\Scripts\python tests/parite.py` → `tests/parite.json` |
+| Tek bir Cypress dosyası | `cd e2e; npx cypress run --browser chrome --spec cypress/e2e/parite.cy.js` (sunucu açıkken) |
+| Demo videosu | `cd e2e; npx cypress run --browser chrome --spec cypress/e2e/demo.cy.js` |
+
+macOS/Linux'ta `.venv\Scripts\python` yerine `.venv/bin/python` kullanılır. Python 3.12 seçildi: başlangıç reposuyla
+aynı, ayrıca Python 3.15 için onnxruntime paketi yok.
 
 ## Repo yapısı
 
+Ödevde beklenen dosyalar önce, sonra diğerleri. **Cypress testleri `e2e/cypress/` altındadır** (kendi `package.json`'ı
+olan ayrı bir klasör); kökte `cypress/` yoktur.
+
 ```
-spec.md                      Problem, kapsam, soru seçme kuralları, kabul örnekleri, akış şeması
-DESIGN.md                    Stitch'ten dışa aktarılan tasarım sistemi (Tome & Terminal)
-docs/
-  ekranlar/                  Stitch ekran tasarımları
-  soru-bankasi.json          8 konu, 23 soru: tetik koşulları, seçenekler, risk, sonuç, neden
-  eval/tutor-eval.md         Tutor değerlendirmesi: 20 mesaj, etiketler, iki koşu
-e2e/
-  cypress.config.js
-  cypress/e2e/primer.cy.js   7 uçtan uca test
-  cypress/e2e/demo.cy.js     Altyazılı demo senaryosu
-src/ ...                     AI Studio ile üretilen uygulama kodu
+spec.md                        Problem, kapsam, soru seçme kuralları, kabul örnekleri; §10: zorluk modeli, eval kapısı
 data/
-  oturumlar.csv              Eğitim verisi (gerçek + sentetik), birlestir.py üretir
-  sentetik.csv               Sentetik oyuncular, sentetik.py üretir
-  ham/                       Oyunculardan gelen ham CSV'ler (veri modu → "Veriyi CSV indir")
-  SOZLUK.md                  Veri sözlüğü
-scripts/
-  sentetik.py                Sentetik veri üreticisi (seed = 13)
-  birlestir.py               data/ham/*.csv + data/sentetik.csv → data/oturumlar.csv
-train.py                     Eğitim + eval kapısı (spec §10.6) + ONNX paketi
-scripts/yayinla.py           model/ → Hugging Face (v2.0 etiketi, commit'e sabit URL, doğrulama)
-src/primer/modelKaynak.ts    Uygulamanın kullandığı model sürümü ve commit'e sabit URL'ler
-RELEASE.md                   Sürüm notları, geri alma, devreye alma planı, ödünleşim matrisi
-tests/
-  parite.py                  Diferansiyel test kahini (Python + onnxruntime) → parite.json
-  parite.json                5 referans girdi ve Python'un p(basari) değerleri
-src/components/PariteScreen.tsx  ?parite=1: aynı girdiler uygulamanın model.ts'iyle (onnxruntime-web)
-requirements.txt             Python 3.12 bağımlılıkları (sürümler sabit)
+  oturumlar.csv                Eğitim verisi: gerçek + sentetik (birlestir.py üretir)
+  SOZLUK.md                    Veri sözlüğü (18 sütun) ve gerçek veriyle ilgili notlar
+  ham/                         Gerçek oyuncuların indirdiği ham CSV'ler (veri modu → "Veriyi CSV indir")
+  sentetik.csv                 Sentetik oyuncular (sentetik.py üretir)
+train.py                       Eğitim + eval kapısı (spec §10.6) + ONNX paketi + model kartı
 model/
-  model.onnx                 Zorluk modeli (train.py üretir)
-  config.json                Özellik sırası, sınıflar, metrikler, eşik (sözleşme)
-  README.md                  Model kartı
+  model.onnx                   Zorluk modeli
+  config.json                  Sözleşme: özellik adları ve sırası, sınıflar, eşik, metrikler
+  README.md                    Model kartı: amaç, veri, metrikler, katsayılar, sınırlar
+RELEASE.md                     Sürümler (v2.0, v2.0.1), geri alma, Shadow/Canary/aşamalı geçiş, ödünleşim matrisi
+tests/
+  parite.py                    Diferansiyel test kahini (Python + onnxruntime)
+  parite.json                  5 referans girdi ve Python'un p(basari) değerleri
+e2e/                           Cypress (ödevdeki "cypress/")
+  cypress.config.js
+  cypress/e2e/primer.cy.js     7 regresyon testi (v1)
+  cypress/e2e/veri.cy.js       4 test: Veri Toplama Modu
+  cypress/e2e/model.cy.js      3 test: spec §10.7 kabul örnekleri 8, 9, 10
+  cypress/e2e/parite.cy.js     1 test: diferansiyel (Python ↔ tarayıcı)
+  cypress/e2e/demo.cy.js       Altyazılı demo senaryosu
+  cypress/fixtures/            model.onnx ve config.json kopyası (testler ağa çıkmaz), test proje kartı
+  cypress/support/e2e.js       Hugging Face isteklerini fixture'a yönlendirir
+SINAV_TASARIMI.md              Sınav tasarımı (düşünce egzersizi)
+README.md                      Bu dosya
+
+src/                           Uygulama (React + Vite)
+  primer/konuSec.ts            Soru seçme kuralı (saf fonksiyon)
+  primer/model.ts              Zorluk modeli: yükleme (commit'e sabit), çıkarım (onnxruntime-web), yedek
+  primer/modelKaynak.ts        Model sürümü ve commit'e sabit URL'ler (yayinla.py üretir)
+  primer/veriToplama.ts        Veri Toplama Modu: özellik hesabı, satır, CSV
+  components/PariteScreen.tsx  ?parite=1: parite girdileri uygulamanın model.ts'iyle
+  data/soruBankasi.json        Soru bankası (docs/soru-bankasi.json ile aynı)
+scripts/
+  sentetik.py                  Sentetik veri üreticisi (seed = 13)
+  birlestir.py                 data/ham/*.csv + data/sentetik.csv → data/oturumlar.csv
+  yayinla.py                   model/ → Hugging Face (etiket, commit'e sabit URL, sha256 ve olasılık doğrulaması)
+  e2e.mjs                      npm test: sunucuyu aç → Cypress → kapat
+docs/
+  soru-bankasi.json            8 konu, 23 soru: tetik koşulları, seçenekler, risk, sonuç, neden, derinleş
+  eval/tutor-eval.md           Tutor değerlendirmesi (v1)
+.github/workflows/pages.yml    main'e push → vite build → GitHub Pages
+requirements.txt               Python 3.12 bağımlılıkları (sürümler sabit)
+server.ts                      Yerel geliştirme sunucusu (Vite + Gemini API uçları)
+DESIGN.md                      Tasarım sistemi (Stitch)
+ODEV.md                        Ödev metni
 ```
 
-## Model (Python 3.12)
+## v2 özeti: zorluk modeli
 
-Kurulum ve eğitim (Windows, proje kökünde):
+**Ne değişti?** v1'de hangi konunun sorulacağına da, o konudaki sorunun hangisi olacağına da sabit bir kural karar
+veriyordu. v2'de konuyu yine kural (`konuSec`) seçer; **model yalnız 1. soru (aşama) ve 3. soru (zayıf konu) için o
+konudan kolay mı zor mu soru geleceğine karar verir.** 2. soru (değişiklik tetikli) eski kuralla gelir. Model
+yüklenemezse eski kural değişmeden çalışır (spec §10.5).
 
-```
-py -3.12 -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.txt
-.venv\Scripts\python train.py
-```
+**Model neye karar veriyor?** Öğrencinin bu konudaki **zor** soruyu düşük riskli cevaplama olasılığı `p(basari)`.
+`p >= 0.5` ise zor soru gelir ve ekranda "Primer seni zorluyor" yazar; cevaptan sonra bir derinleş sorusu gelir.
+`p < 0.5` ise kolay soru gelir ve ekranda "Primer temelden alıyor" yazar. Girdi, soru gösterilmeden önce bilinen 7
+değerdir (spec §10.2): seviye, konunun beceri puanı, o konudaki önceki soru ve riskli seçim sayısı, bir önceki
+sorudaki karar süresi ve gerekçe uzunluğu, oturum no. Model `StandardScaler → LogisticRegression` (seed 13) ve
+tarayıcıda onnxruntime-web ile çalışır.
 
-`train.py` eval kapısını geçemezse (`model/`'e hiçbir şey yazmadan) hata koduyla durur. macOS/Linux'ta
-`.venv\Scripts\python` yerine `.venv/bin/python` kullanılır. Python 3.12 kullanılır
-(başlangıç reposuyla aynı; Python 3.15 için onnxruntime paketi yok).
+**Eval sonucu** (spec §10.6; eşik eğitimden önce yazıldı): `StratifiedGroupKFold(5)`, grup = `proje_id`.
 
-**Modelin davranışı (bilgi):** Tanışmadaki varsayılanlarla yeni bir öğrenci (seviye 0, ilk oturum), beceri puanı 2
-olan konularda p ≈ 0.59 alır ve **zor** soru görür; beceri 0–1 olan konularda kolay soru görür (8 konunun 4'ünde zor).
-Bu, modelin kendi çıktısıdır; eşik (0.5) ya da model buna göre ayarlanmadı. Ayrıntı ve diğer sınırlar: `model/README.md`
-ve `RELEASE.md` → "Bilinen sınırlar".
+| | |
+|---|---|
+| 5 katlama ortalama ROC-AUC (kapı ≥ 0.65) | **0.7693 → geçti** |
+| Katlama AUC'leri | 0.7962 · 0.8040 · 0.8181 · 0.8059 · 0.6225 (std 0.0738) |
+| Yalnız gerçek satırlarda out-of-fold AUC (bilgi) | 0.60 (26 zor satır, 5'i `basari = 0`) |
+| Veri | 7 gerçek oyuncu (19 oturum, 57 satır) + 45 sentetik oyuncu (705 satır) |
+| Parite (Python ↔ tarayıcı) | maks \|fark\| 5.93e-8 (tolerans 1e-4) |
 
-## Veri
+Model büyük ölçüde sentetik kuralı öğreniyor; sınırların tamamı [model kartında](model/README.md).
 
-```
-.venv\Scripts\python scripts/sentetik.py     # data/sentetik.csv (her çalıştırmada aynı dosya)
-.venv\Scripts\python scripts/birlestir.py    # data/oturumlar.csv
-```
+**En önemli bulgular:**
 
-**Sentetik veri:** üretici `scripts/sentetik.py`, **tohum `SEED = 13`** (tek bir `random.Random(13)`).
-45 sahte oyuncu var (seviye 0/1/2'den 15'er). Her oyuncu 4–6 oturum oynar, her oturumda 3 soru, toplam 705 satır.
-Sorular uygulamanın `konuSec` kuralıyla seçilir. Slot 1 ve 3'te istenen zorluk yazı-turayla belirlenir; slot 2
-bankadaki zorluğuyla gelir. Girdiler (beceri puanı, önceki soru ve riskli sayısı, son karar süresi ve gerekçe
-uzunluğu, oturum no) uygulamadaki mantıkla oyuncunun önceki satırlarından hesaplanır. Etiket şu olasılıkla çekilir:
+- **G-03 ters puanlanıyordu.** Kontrol sorusunda "Evet" anahtarın açıkta olduğu (riskli) durumdu ama +1 alıyordu.
+  Bu, v2'nin etiketini (kontrol sorusunda "Evet" = başarı) bozacaktı; soru metni düzeltildi.
+  → [Bilinen sorunlar](#bilinen-sorunlar--düzeltilenler)
+- **Flaky test:** seçenekler iki kez karıştırılıyordu. Cypress "düşük riskli" sandığı kartı tıklarken başka bir
+  seçeneği seçebiliyor, 1. test ara sıra kalıyordu. Artık seçenekler soru başına bir kez karıştırılıyor.
+  → [Bilinen sorunlar](#bilinen-sorunlar--düzeltilenler),
+  [commit 591808b](https://github.com/kubrabasimoglu32/se-primer-app/commit/591808b)
+- **Hızlı karar veren gerçek oyuncular çoğunlukla başarılı.** Gerçek zor satırlarda önceki karar süresi kısa
+  (medyan 5 sn) ve satırların çoğu başarılı. Bir oyuncuda 3. oturumdan sonra karar süresi 3 sn'nin altına iniyor ve
+  aynı soru (V-01) her oturumda geliyor; bu ezber gibi duruyor. `son_karar_suresi_sn` katsayısı, sentetik formüldeki
+  yönün tersine negatif çıktı. Teşhis: formüldeki etki çok küçük, bu veri miktarında gürültüden ayırt edilemiyor;
+  katsayı yorumlanmamalı. → [model kartı](model/README.md) ("Katsayılar ve yorumu"), [data/SOZLUK.md](data/SOZLUK.md)
+- **3. soru için eğitim–sunum farkı (training-serving skew).** Sorular oturum başında seçildiği için uygulamada
+  3. sorunun girdileri önceki oturumun son cevabından, eğitimde ise aynı oturumun 2. cevabından geliyor. Bu fark
+  254 satırın 26'sında kararı değiştiriyor. v3 için not: 3. soruyu 2. cevaptan sonra seçmek.
+  → [RELEASE.md](RELEASE.md) ("Bilinen sınırlar")
+
+## Sentetik veri
+
+Üretici `scripts/sentetik.py`, **tohum `SEED = 13`** (tek bir `random.Random(13)`). **45 sahte oyuncu** var
+(seviye 0/1/2'den 15'er). Her oyuncu 4–6 oturum oynar, her oturumda 3 soru, toplam **705 satır**. Her oyuncunun
+tohumlu UUID'li kendi `proje_id`'si var; eğitimde ayrı bir grup sayılır.
+
+- Sorular uygulamanın `konuSec` kuralıyla, gerçek soru bankasından seçilir. Slot 1 ve 3'te istenen zorluk
+  yazı-turayla belirlenir; slot 2 bankadaki zorluğuyla gelir.
+- Girdiler uygulamadaki mantıkla oyuncunun önceki satırlarından hesaplanır: beceri puanı (oturum sonunda +1/0/−1,
+  0–5 arası), önceki soru ve riskli sayısı, son karar süresi ve gerekçe uzunluğu, oturum no.
+- Etiket şu olasılıkla çekilir:
 
 ```
 z = -0.4 + 0.5*seviye + 0.45*(konu_beceri_puani - 2.5) - 0.7*konudaki_onceki_riskli_sayisi
@@ -98,33 +175,44 @@ p(basari=1) = sigmoid(z + 1.2)  kolay satır
 ```
 
 Kuralın tamamı (karar süresi ve gerekçe uzunluğu dağılımları dahil) `scripts/sentetik.py`'nin başındaki yorumdadır.
+Gerçek veri: `?veri=1` ile toplanan 7 oyuncu, `data/ham/` (kişisel veri yok; bkz. [data/SOZLUK.md](data/SOZLUK.md)).
 
 ## Nasıl çalışır?
 
-1. **Tanışma:** Seviye, rol, öğrenme hedefi ve proje bilgileri (aşama, teknoloji, veri tabanı, mimari, kişisel veri, klasör yapısı). Bunlardan **Proje Kartı** oluşur.
-2. **Ne değişti?:** Sonraki girişlerde öğrenci yaptığı değişiklikleri işaretler (yeni özellik, veri tabanı, test, yayın, hata…).
-3. **3 soru:** Hangi konunun sorulacağına **kod** karar verir (aşama, değişiklik, zayıf konu), soru metnini **Gemini** öğrencinin projesine uyarlar. Yapay zekâ çalışmazsa bankadaki orijinal soru kullanılır.
-4. **Projem:** Oturum sonucu (Sağlıklı / Risk var), açık riskler, beceri haritası, karar kaydı. Proje bitince proje karnesi.
+1. **Tanışma:** Seviye, rol, öğrenme hedefi ve proje bilgileri (aşama, teknoloji, veri tabanı, mimari, kişisel veri,
+   klasör yapısı). Bunlardan **Proje Kartı** oluşur.
+2. **Ne değişti?:** Sonraki girişlerde öğrenci yaptığı değişiklikleri işaretler (yeni özellik, veri tabanı, test,
+   yayın, hata…).
+3. **3 soru:** Hangi konunun sorulacağına **kod** karar verir (aşama, değişiklik, zayıf konu). 1. ve 3. sorunun
+   zorluğuna **model** karar verir. Soru metnini **Gemini** öğrencinin projesine uyarlar; yapay zekâ çalışmazsa
+   bankadaki orijinal soru kullanılır.
+4. **Projem:** Oturum sonucu (Sağlıklı / Risk var), açık riskler, beceri haritası, karar kaydı. Proje bitince proje
+   karnesi.
 
-Seçimi koda, metni yapay zekâya bırakmanın nedeni: seçim açıklanabilir, test edilebilir ve yapay zekâ olmadan da çalışır.
+Seçimi koda, metni yapay zekâya bırakmanın nedeni: seçim açıklanabilir, test edilebilir ve yapay zekâ olmadan da
+çalışır.
 
-## Testleri çalıştırma
+**Modelin davranışı (bilgi):** Tanışmadaki varsayılanlarla yeni bir öğrenci (seviye 0, ilk oturum), beceri puanı 2
+olan konularda p ≈ 0.59 alır ve **zor** soru görür; beceri 0–1 olan konularda kolay soru görür (8 konunun 4'ünde zor).
+Bu, modelin kendi çıktısıdır; eşik (0.5) ya da model buna göre ayarlanmadı.
 
-```bash
-# 1. pencere: uygulama
-npm install --legacy-peer-deps
-npm run dev
+## Testler
 
-# 2. pencere: testler
-cd e2e
-npm install
-npx cypress run --browser chrome                                   # 6 test
-npx cypress run --browser chrome --spec cypress/e2e/demo.cy.js     # demo videosu
-```
+`npm test` ile 15 test çalışır. Testler ağa çıkmaz: yapay zekâ çağrıları 500 döndürür (uygulama soru bankasına
+döner) ve model Hugging Face yerine `e2e/cypress/fixtures/` altındaki kopyadan gelir. Seçeneklerin sırası her soruda
+karışık geldiği için testler seçeneği harfine göre değil, `data-risk` niteliğine (düşük / orta / yüksek) göre seçer.
 
-Testlerde yapay zekâ çağrıları hata döndürecek şekilde sabitlenir. Uygulama soru bankasına döner, böylece her koşu aynı sonucu verir. Seçeneklerin sırası her soruda karışık geldiği için testler seçeneği harfine göre değil, `data-risk` niteliğine (düşük / orta / yüksek) göre seçer.
+| Dosya | Test | Ne kontrol eder |
+|---|---|---|
+| `primer.cy.js` | 7 | v1 regresyon testleri (aşağıda); model devredeyken de geçer |
+| `veri.cy.js` | 4 | Veri Toplama Modu: seviye, `basari`, `proje_id` / `oturum_id`, "Toplanan veriyi sil" |
+| `model.cy.js` | 3 | Spec §10.7: 8) p ≥ 0.5 → zor soru + derinleş, 9) veri tabanı değişikliği → V-01, 10) model 404 → eski kural |
+| `parite.cy.js` | 1 | Python ↔ tarayıcı, 5 girdi, \|fark\| < 1e-4 ve aynı karar |
 
-**Sonuç:** 7 / 7 test geçti.
+**Sonuç:** 15 / 15. (Parite testinden önceki 14 test art arda 3 koşuda da geçti; 15 test `npm test` ile ayrıca
+çalıştırıldı.)
+
+v1 regresyon testleri:
 
 | # | Test |
 |---|---|
@@ -136,7 +224,9 @@ Testlerde yapay zekâ çağrıları hata döndürecek şekilde sabitlenir. Uygul
 | 6 | Proje sayfa yenilenince kaybolmaz, tanışma tekrar gelmez |
 | 7 | Seçimden önce risk ve puan bilgisi görünmez, seçimden sonra görünür (kullanıcı testinden eklendi) |
 
-**Test sırasında bulunan bir sorun:** İlk testte "hep düşük riskli seçim → sağlıklı" bekledik. Örnek proje 3 açık riskle başladığı için kurala göre sonuç "risk" çıktı. Test, spec'teki kuralı (açık risk sayısı azalmalı) yanlış yorumluyordu. Beklenti "yeni risk eklenmez" olarak düzeltildi.
+**Test sırasında bulunan bir sorun (v1):** İlk testte "hep düşük riskli seçim → sağlıklı" bekledik. Örnek proje
+3 açık riskle başladığı için kurala göre sonuç "risk" çıktı. Test, spec'teki kuralı (açık risk sayısı azalmalı)
+yanlış yorumluyordu. Beklenti "yeni risk eklenmez" olarak düzeltildi.
 
 ## Diferansiyel test (parite)
 
@@ -150,11 +240,6 @@ Aynı model dosyası iki farklı ortamda aynı girdilere aynı cevabı vermeli.
   `data-cy="p-0".."p-4"` ile 8 ondalık gösterir.
 - **Kontrol** (`e2e/cypress/e2e/parite.cy.js`): her girdide `|p_tarayıcı − p_python| < 1e-4` ve 0.5 eşiğindeki
   karar (zor/kolay) aynı.
-
-```
-.venv\Scripts\python tests/parite.py                                  # kahin → tests/parite.json
-cd e2e && npx cypress run --browser chrome --spec cypress/e2e/parite.cy.js
-```
 
 **Sonuç** (model v2.0.1, `576e42b0`; maks |fark| = **5.93e-8**):
 
@@ -178,7 +263,11 @@ cd e2e && npx cypress run --browser chrome --spec cypress/e2e/parite.cy.js
   sayısal fark kararı hiç değiştirmez; test yalnız sayıyı ölçmüş olur. p = 0.50002 olan girdide eşiğe uzaklık
   (2.1e-5) toleransın altında. Böyle bir girdide iki ortamın **kararı** da aynı olmalı; test bunu ayrıca kontrol eder.
 
-## Tutor eval özeti
+## Sınav tasarımı
+
+Düşünce egzersizi ("Sizinle uyumlanan sınav tasarımı"): [SINAV_TASARIMI.md](SINAV_TASARIMI.md)
+
+## Tutor eval özeti (v1)
 
 - 20 öğrenci mesajı gizli eval sayfasıyla (`?eval=1`) tutora gönderildi.
 - **20 yanıtın 20'si modelden değil, sabit yedek metinden geldi.** Gemini API, okul hesabına bağlı projede ücretsiz katman kapalı olduğu için 403 döndürdü. Model değişikliği sorunu çözmedi.
@@ -186,7 +275,7 @@ cd e2e && npx cypress run --browser chrome --spec cypress/e2e/parite.cy.js
 - En önemli bulgu: yedek mekanizması uygulamayı ayakta tuttu ama hatayı gizledi. Eval'e "kaynak" sütunu eklemeseydik tutorun çalışmadığını fark etmeyecektik.
 - Ayrıntılar: [docs/eval/tutor-eval.md](docs/eval/tutor-eval.md)
 
-## Gerçek kullanıcı testi
+## Gerçek kullanıcı testi (v1)
 
 Uygulamayı 29 Ekim'de bir sınıf arkadaşım telefonunda denedi.
 
@@ -202,7 +291,7 @@ Uygulamayı 29 Ekim'de bir sınıf arkadaşım telefonunda denedi.
 ## Ürün kararı: yapmadığım 3 özellik
 
 1. **GitHub'a bağlanıp kodu otomatik okumak:** Öğrencinin kodunu dış bir servise göndermek güvenlik ve KVKK yükü getirir. Ayrıca amaç kodu analiz etmek değil, öğrenciyi kararları üzerine düşündürmek.
-2. **Hesap ve bulut kaydı:** Tek kullanıcılı bir öğrenme aracında kişisel veri toplamayı gerektirir. JSON dışa / içe aktarma kaybı önlemeye yetiyor.
+2. **Hesap ve bulut kaydı:** Tek kullanıcılı bir öğrenme aracında kişisel veri toplamayı gerektirir. JSON dışa / içe aktarma kaybı önlemeye yetiyor. (v2'de model de bu yüzden tarayıcıda çalışıyor: öğrenci verisi cihazdan çıkmıyor; bkz. [RELEASE.md](RELEASE.md) ödünleşim matrisi.)
 3. **"Doğru cevabı göster" düğmesi:** Tutorun temel sözünü bozar. Öğrenci doğru yolu, seçiminin sonucunu görerek ve sonraki oturumlarda aynı konuyla tekrar karşılaşarak öğrenir.
 
 ## Bilinen sorunlar / düzeltilenler
@@ -222,16 +311,27 @@ kendisine bağlı; sıra yine her soruda karışık.
 
 **Bilinen sorunlar:**
 
-- Tutor ve soru uyarlama şu an yapay zekâya ulaşamıyor (Gemini API 403, ücretsiz katman kapalı). Uygulama yedek metin ve soru bankasıyla çalışıyor.
+- Tutor ve soru uyarlama şu an yapay zekâya ulaşamıyor (Gemini API 403, ücretsiz katman kapalı; Pages'te sunucu da
+  yok). Uygulama yedek metin ve soru bankasıyla çalışıyor.
+- onnxruntime-web'in wasm dosyası 14.8 MB (gzip 3.9 MB). Yavaş bağlantıda ilk açılışta model ~3 sn içinde hazır
+  olmazsa ilk oturum eski kuralla geçer; sonraki açılışlar önbellekten gelir (ölçüm: [RELEASE.md](RELEASE.md)).
 - AI Studio paylaşım linki bazı Google hesaplarında açılmıyor (yaş doğrulaması / şartların kabulü).
 - Proje yalnızca tarayıcıda (localStorage) saklanıyor. Tarayıcı verisi silinirse proje kaybolur; bunu önlemek için dışa aktarma var.
 
 ## Kaynakça
 
 1. Stephenson, N. (1995). *The Diamond Age: Or, A Young Lady's Illustrated Primer.* Bantam Spectra.
-2. Sommerville, I. (2016). *Software Engineering* (10. baskı). Pearson. Bölüm 4 (gereksinimler), 5 (durum makineleri), 8 (test).
+2. Sommerville, I. (2016). *Software Engineering* (10. baskı). Pearson. Bölüm 4 (gereksinimler), 5 (durum makineleri), 8 (test), 25 (konfigürasyon yönetimi).
 3. GitHub (2025). *Spec Kit: spec-driven development.* github.com/github/spec-kit
 4. Google Labs. *Stitch* (stitch.withgoogle.com) ve *Google AI Studio* (aistudio.google.com).
 5. Cypress. *E2E testing, screenshots and videos.* docs.cypress.io
 6. METR (2025). *Measuring the Impact of Early-2025 AI on Experienced Open-Source Developer Productivity.*
 7. 6698 sayılı Kişisel Verilerin Korunması Kanunu (2016), m.4, m.9, m.12. kvkk.gov.tr
+8. Amershi, S. vd. (2019). *Software Engineering for Machine Learning: A Case Study.* ICSE-SEIP.
+9. Shankar, S. vd. (2022). *Operationalizing Machine Learning: An Interview Study.* arXiv:2209.09125.
+10. Mitchell, M. vd. (2019). *Model Cards for Model Reporting.* FAT\*.
+11. Breck, E. vd. (2017). *The ML Test Score: A Rubric for ML Production Readiness and Technical Debt Reduction.* IEEE BigData.
+
+## Yapay zekâ araçlarını nasıl kullandım
+
+<!-- Bu bölümü ben yazacağım. -->
