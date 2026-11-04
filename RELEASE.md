@@ -25,8 +25,28 @@
 - Yayınlama: `scripts/yayinla.py`. Doğrulama: sabit commit'ten indirilen `model.onnx`, `config.json`'daki örnek
   girdiyle yerel `model/model.onnx` ile aynı olasılığı veriyor (0.19479504, fark 0; dosya md5'leri aynı).
   Tekrar denemek için: `.venv\Scripts\python scripts/yayinla.py --dogrula`.
-- **Durum:** Model Hub'da yayında ve sürümü `modelKaynak.ts`'e sabitlendi. Uygulamanın modeli tarayıcıda
-  çalıştırması (onnxruntime-web) sonraki adım; aşağıdaki devreye alma planı o adım için yazıldı.
+- **Uygulamada:** `src/primer/model.ts` modeli açılışta bir kez, `modelKaynak.ts`'teki commit'e sabit URL'den
+  onnxruntime-web ile yükler. Sorular seçilirken model en fazla ~3 sn beklenir; hazır değilse ya da `config.json`'daki
+  özellik sırası koddakiyle aynı değilse eski `konuSec` çalışır (spec §10.5). `?veri=1`'de seçim yazı-turayla
+  sürer; model yalnız `p_model`'e yazar (Shadow). Cypress: spec §10.7 örnek 8, 9, 10 (`e2e/cypress/e2e/model.cy.js`).
+
+### Bilinen sınırlar
+
+- **Yeni öğrenci, beceri puanı 2 olan konularda zor soru alır.** Tanışmadaki varsayılanlarla (seviye 0, ilk oturum)
+  model 8 konunun 4'ünde `p >= 0.5` veriyor: beceri 2 olan konularda p ≈ 0.59, beceri 1'de ≈ 0.44, beceri 0'da
+  ≈ 0.31. Bu, modelin çıktısıdır; eşik ya da model sonradan ayarlanmadı. Kesin değerler model kartında ve
+  `config.json` → `metrics.bilgi_varsayilan_yeni_oyuncu`'da.
+- **3. soru için eğitim–sunum farkı (training-serving skew).** Sorular oturum başında seçilir (spec §10.3). Bu yüzden
+  uygulamada 3. sorunun p'si `son_karar_suresi_sn` ve `son_gerekce_uzunlugu` için **önceki oturumun son cevabını**
+  kullanır. Eğitim verisinde ise 3. satırın bu iki girdisi **aynı oturumdaki 2. cevaptan** gelir; çünkü veri modunda
+  özellikler soru gösterilirken ölçülür. 1. soru ve diğer 5 girdi iki durumda da aynıdır.
+  - Ölçüm (`config.json` → `metrics.bilgi_egitim_sunum_farki`): 254 satırlık 3. soru verisinde p ortalama 0.072
+    (en fazla 0.31) değişiyor; 26 satırda zorluk kararı değişiyor (19 gerçek satırın 1'inde).
+  - Veri modundaki `p_model` her satırın kendi gösterim anındaki girdileriyle hesaplanır, yani eğitimle tutarlıdır.
+    Bu yüzden Shadow değerlendirmesi ("model zor dediğinde öğrenci başardı mı") geçerlidir.
+  - Eğitimde ve sunumda özelliklerin aynı değeri vermesi ML Test Score'da ayrı bir kontroldür (Breck vd., 2017).
+  - **v3 için not:** 3. soru 2. cevaptan sonra seçilirse fark ortadan kalkar. Bunun bedeli, 3. sorunun oturum başında
+    hazırlanamaması (soru uyarlama isteği oturum ortasına kayar).
 
 ## Geri alma (rollback)
 
@@ -106,7 +126,7 @@ Geri alma, bir önceki adımın hex aralığına dönmek ya da `MODEL_COMMIT`'i 
 
 | | Tarayıcı (onnxruntime-web, GitHub Pages) | Mobil cihaz içi (Expo, gömülü ONNX) | Kendi sunucu (Render / Rails / Express) |
 |---|---|---|---|
-| **1. Ağ zorunlu mu, gecikme nasıl?** | İlk açılışta `model.onnx` ve onnxruntime-web indirilir (ilk yükleme gecikmesi). Sonra tahmin yereldir, ağ gerekmez. Ağ yoksa §10.5 yedeği çalışır. | İnternetsiz çalışır. Model uygulamayla gelir, gecikme en düşük. Yeni model için uygulama güncellemesi gerekir. | Her tahmin bir ağ isteğidir. Ağ gecikmesi ve ücretsiz katmanda uyuyan sunucunun ilk istekte uyanma gecikmesi var. Ağ yoksa tahmin yok. |
+| **1. Ağ zorunlu mu, gecikme nasıl?** | İlk açılışta `model.onnx` ve onnxruntime-web indirilir (ilk yükleme gecikmesi). **Ölçülmüş örnek:** onnxruntime-web'in wasm dosyası 14.8 MB (gzip 3.9 MB); `model.onnx` yalnız 573 B. Sorular seçilirken model en fazla ~3 sn beklendiği için yavaş bağlantıda ilk oturum eski kurala düşer, sonraki oturumlar (dosya önbellekte) modeli kullanır. Sonra tahmin yereldir, ağ gerekmez. Ağ yoksa §10.5 yedeği çalışır. | İnternetsiz çalışır. Model uygulamayla gelir, gecikme en düşük. Yeni model için uygulama güncellemesi gerekir. | Her tahmin bir ağ isteğidir. Ağ gecikmesi ve ücretsiz katmanda uyuyan sunucunun ilk istekte uyanma gecikmesi var. Ağ yoksa tahmin yok. |
 | **2. Veri cihazdan çıkar mı? (KVKK)** | Çıkmaz. 7 girdi tarayıcıda hesaplanır ve orada kalır. | Çıkmaz. | Çıkar. Öğrencinin davranış verisi (beceri puanı, karar süresi, riskli seçim sayısı) her istekte sunucuya gider; saklama, erişim ve aydınlatma yükümlülüğü doğar. |
 | **3. Model gizli kalır mı? (REA riski)** | Kalmaz; `model.onnx` istemciye iner ve açılıp okunabilir. | Kalmaz; uygulama paketinden çıkarılabilir. | Dosya gizli kalır, ama istek-yanıt üzerinden çok sayıda sorgu ile model taklit edilebilir (tersine mühendislik). |
 
@@ -120,7 +140,9 @@ Geri alma, bir önceki adımın hex aralığına dönmek ya da `MODEL_COMMIT`'i 
   yazılı.
 - **Uygulama zaten GitHub Pages'te statik.** Sunucu gerekmez, ücretsiz kalır. Model yüklenemezse §10.5 yedeği
   çalışır.
-- **Bedeli:** ilk açılıştaki indirme gecikmesi ve modelin herkese açık olması. Mobil (Expo) seçeneği internetsiz
+- **Bedeli:** ilk açılıştaki indirme gecikmesi (wasm 14.8 MB, gzip 3.9 MB) ve modelin herkese açık olması.
+  Daha küçük bir derleme yok: uygulama zaten yalnız WebAssembly arka ucunu (`onnxruntime-web/wasm`, WebGPU/WebGL yok)
+  ve onun en küçük wasm'ını kullanıyor; diğer varyantlar daha büyük (jspi 17.9 MB, asyncify 28.7 MB, jsep 29.5 MB). Mobil (Expo) seçeneği internetsiz
   çalışırdı ama her model sürümü için mağaza güncellemesi gerektirir. Ayrıca bu projede mobil uygulama yok.
 
 ## Kaynaklar

@@ -68,6 +68,11 @@ py -3.12 -m venv .venv
 `.venv\Scripts\python` yerine `.venv/bin/python` kullanılır. Python 3.12 kullanılır
 (başlangıç reposuyla aynı; Python 3.15 için onnxruntime paketi yok).
 
+**Modelin davranışı (bilgi):** Tanışmadaki varsayılanlarla yeni bir öğrenci (seviye 0, ilk oturum), beceri puanı 2
+olan konularda p ≈ 0.59 alır ve **zor** soru görür; beceri 0–1 olan konularda kolay soru görür (8 konunun 4'ünde zor).
+Bu, modelin kendi çıktısıdır; eşik (0.5) ya da model buna göre ayarlanmadı. Ayrıntı ve diğer sınırlar: `model/README.md`
+ve `RELEASE.md` → "Bilinen sınırlar".
+
 ## Veri
 
 ```

@@ -143,6 +143,19 @@ satırın 173 tanesinde sıfır (önceki süre formüldeki eşiğin üstünde); 
 - **Soru bankası küçük (23 soru).** Sorular tekrar ediyor ve ezberleniyor (yukarıdaki madde: 3. oturumdan
   sonra karar süresi 3 sn'nin altına iniyor). Sonraki oturumlardaki `basari`, konunun öğrenilmesinden çok cevabın
   hatırlanmasını yansıtıyor olabilir.
+- **Yeni öğrenci, beceri puanı 2 olan konularda zor soru alır.** Tanışmadaki varsayılanlarla (seviye 0, ilk oturum, geçmiş yok; beceri puanları tanışmadaki varsayılan) model
+  4/8 konuda `p >= 0.5` veriyor: beceri 2 olan konularda (`kapsam`, `mimari`, `veriTabani`, `dosyaDuzeni`) p = 0.5903; beceri 1 olan konularda (`guvenlik`, `dagitim`, `rapor`) p = 0.4432; beceri 0 olan konularda (`test`) p = 0.3055. Bu, modelin kendi çıktısıdır;
+  eşik ya da model buna göre sonradan ayarlanmadı.
+- **3. soru için eğitim–sunum farkı (training-serving skew).** Sorular oturum başında seçildiği için (spec §10.3)
+  3. sorunun p'si o an bilinenlerle hesaplanır: `son_karar_suresi_sn` ve `son_gerekce_uzunlugu` **önceki oturumun son
+  cevabından** gelir. Eğitim verisinde ise 3. satırın bu iki girdisi **aynı oturumdaki 2. cevaptan** gelir (soru
+  gösterilirken ölçülür). Diğer 5 girdi ve 1. soru iki durumda da aynıdır. Verideki 254 3. satırda bu fark
+  p'yi ortalama 0.072 (en fazla 0.3108) değiştiriyor ve
+  26 satırda zorluk kararını değiştiriyor (gerçek satırlarda: 19 satırın
+  1 tanesinde). Veri modundaki `p_model` ise her satırın kendi gösterim anındaki
+  girdileriyle hesaplanır, yani eğitimle tutarlıdır; Shadow değerlendirmesi bu yüzden geçerlidir. Eğitimde ve
+  sunumda özelliklerin aynı hesaplanması ML Test Score'da ayrı bir kontroldür (Breck vd., 2017). **v3 için not:**
+  3. soru 2. cevaptan sonra seçilirse fark ortadan kalkar.
 
 ## Kullanım
 

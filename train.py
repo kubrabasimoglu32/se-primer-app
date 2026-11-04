@@ -59,6 +59,11 @@ OZELLIK_ETIKETLERI = {
 }
 HEDEF = "basari"
 
+# src/components/TanismaScreen.tsx: yeni projenin beceri puanları (tanışmadaki varsayılan). Seviye varsayılanı
+# "Yeni başladım" = 0. Model kartındaki "varsayılan yeni oyuncu" satırı bu profille modelden hesaplanır.
+TANISMA_BECERI = {"kapsam": 2, "mimari": 2, "veriTabani": 2, "dosyaDuzeni": 2,
+                  "test": 0, "guvenlik": 1, "dagitim": 1, "rapor": 1}
+
 
 def model_kur() -> Pipeline:
     return Pipeline([("scaler", StandardScaler()), ("lr", LogisticRegression(random_state=SEED))])
@@ -250,6 +255,51 @@ def katsayi_teshisi(zor: pd.DataFrame, kats_tum: list[dict]) -> dict:
     }
 
 
+def varsayilan_oyuncu(model: Pipeline) -> dict:
+    """Tanışmadaki varsayılanlarla yeni oyuncu (seviye 0, ilk oturum, geçmiş yok): konu başına p(basari)."""
+    satirlar = [{"seviye": 0, "konu_beceri_puani": b, "konudaki_onceki_soru_sayisi": 0,
+                 "konudaki_onceki_riskli_sayisi": 0, "son_karar_suresi_sn": 0, "son_gerekce_uzunlugu": 0,
+                 "oturum_no": 1} for b in TANISMA_BECERI.values()]
+    p = model.predict_proba(pd.DataFrame(satirlar, columns=OZELLIKLER))[:, 1]
+    konu_p = {k: round(float(v), 4) for k, v in zip(TANISMA_BECERI, p)}
+    beceri_p = {str(b): round(float(v), 4) for b, v in sorted(
+        {b: v for b, v in zip(TANISMA_BECERI.values(), p)}.items())}
+    return {
+        "profil": "seviye 0, ilk oturum, geçmiş yok; beceri puanları tanışmadaki varsayılan",
+        "konu_p": konu_p,
+        "beceri_p": beceri_p,
+        "zor_konular": [k for k, v in konu_p.items() if v >= ESIK_KARAR],
+    }
+
+
+def egitim_sunum_farki(tum: pd.DataFrame, model: Pipeline) -> dict:
+    """3. soru için eğitim-sunum farkı (training-serving skew), veriden ölçülür.
+
+    Eğitimde 3. satırın son_* girdileri aynı oturumdaki 2. cevaptan gelir (gösterim anı). Uygulamada sorular oturum
+    başında seçildiği için sunumda bu iki girdi önceki oturumun son cevabından gelir; bu değerler aynı oturumun
+    1. satırındaki son_* değerleriyle aynıdır. Diğer 5 girdi (oturum başındaki kart) iki durumda da aynıdır.
+    """
+    son = ["son_karar_suresi_sn", "son_gerekce_uzunlugu"]
+    birinci = tum[tum["slot"] == 1].set_index("oturum_id")[son]
+    ucuncu = tum[tum["slot"] == 3].copy()
+    ucuncu = ucuncu[ucuncu["oturum_id"].isin(birinci.index)]
+    sunum = ucuncu.copy()
+    sunum[son] = birinci.loc[ucuncu["oturum_id"], son].to_numpy()
+    p_egitim = model.predict_proba(ucuncu[OZELLIKLER])[:, 1]
+    p_sunum = model.predict_proba(sunum[OZELLIKLER])[:, 1]
+    fark = np.abs(p_egitim - p_sunum)
+    donen = (p_egitim >= ESIK_KARAR) != (p_sunum >= ESIK_KARAR)
+    gercek = (ucuncu["kaynak"] == "gercek").to_numpy()
+    return {
+        "satir": int(len(ucuncu)),
+        "ort_mutlak_fark": round(float(fark.mean()), 4) if len(fark) else None,
+        "maks_mutlak_fark": round(float(fark.max()), 4) if len(fark) else None,
+        "karari_degisen": int(donen.sum()),
+        "gercek_satir": int(gercek.sum()),
+        "gercek_karari_degisen": int(donen[gercek].sum()),
+    }
+
+
 def model_dir_bosalt() -> None:
     """model/'in içini boşaltır, klasörü bırakır (Windows/OneDrive açık klasörü silmeye izin vermeyebilir)."""
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
@@ -338,6 +388,11 @@ def model_karti(config: dict, kats: list[dict], katlamalar: list[dict]) -> str:
     sentetik_kiyas_satirlari = "\n".join(
         f"| `{k['ozellik']}` | {k['katsayi_olcekli']:+.4f} | {tk['sentetik_katsayilar'][k['ozellik']]:+.4f} |"
         for k in kats)
+    yo = m["bilgi_varsayilan_yeni_oyuncu"]
+    sk3 = m["bilgi_egitim_sunum_farki"]
+    yeni_oyuncu_metni = "; ".join(
+        f"beceri {b} olan konularda ({', '.join(f'`{k}`' for k, kb in TANISMA_BECERI.items() if str(kb) == b)}) "
+        f"p = {pb}" for b, pb in sorted(yo["beceri_p"].items(), reverse=True))
     son_karar_paragrafi = son_karar_metni(tk["son_karar_suresi_sn"], v.get("gercek_dikkat_tekrar", {}))
     alt = [k for k in katlamalar if k["auc"] < config["kapi"]["esik"]]
     katlama_esik_metni = (
@@ -462,6 +517,19 @@ Bu katsayılar büyük ölçüde sentetik üreticinin kuralını yansıtır (bkz
 - **Soru bankası küçük ({v["banka_soru"]} soru).** Sorular tekrar ediyor ve ezberleniyor (yukarıdaki madde: 3. oturumdan
   sonra karar süresi 3 sn'nin altına iniyor). Sonraki oturumlardaki `basari`, konunun öğrenilmesinden çok cevabın
   hatırlanmasını yansıtıyor olabilir.
+- **Yeni öğrenci, beceri puanı 2 olan konularda zor soru alır.** Tanışmadaki varsayılanlarla ({yo["profil"]}) model
+  {len(yo["zor_konular"])}/8 konuda `p >= {config["esik"]}` veriyor: {yeni_oyuncu_metni}. Bu, modelin kendi çıktısıdır;
+  eşik ya da model buna göre sonradan ayarlanmadı.
+- **3. soru için eğitim–sunum farkı (training-serving skew).** Sorular oturum başında seçildiği için (spec §10.3)
+  3. sorunun p'si o an bilinenlerle hesaplanır: `son_karar_suresi_sn` ve `son_gerekce_uzunlugu` **önceki oturumun son
+  cevabından** gelir. Eğitim verisinde ise 3. satırın bu iki girdisi **aynı oturumdaki 2. cevaptan** gelir (soru
+  gösterilirken ölçülür). Diğer 5 girdi ve 1. soru iki durumda da aynıdır. Verideki {sk3["satir"]} 3. satırda bu fark
+  p'yi ortalama {sk3["ort_mutlak_fark"]} (en fazla {sk3["maks_mutlak_fark"]}) değiştiriyor ve
+  {sk3["karari_degisen"]} satırda zorluk kararını değiştiriyor (gerçek satırlarda: {sk3["gercek_satir"]} satırın
+  {sk3["gercek_karari_degisen"]} tanesinde). Veri modundaki `p_model` ise her satırın kendi gösterim anındaki
+  girdileriyle hesaplanır, yani eğitimle tutarlıdır; Shadow değerlendirmesi bu yüzden geçerlidir. Eğitimde ve
+  sunumda özelliklerin aynı hesaplanması ML Test Score'da ayrı bir kontroldür (Breck vd., 2017). **v3 için not:**
+  3. soru 2. cevaptan sonra seçilirse fark ortadan kalkar.
 
 ## Kullanım
 
@@ -527,6 +595,11 @@ def main() -> None:
     model_dir_bosalt()
     fark = onnx_aktar(model, X)
     kats = katsayilar(model)
+    tum_veri = pd.read_csv(VERI)
+    yeni_oyuncu = varsayilan_oyuncu(model)
+    sunum_farki = egitim_sunum_farki(tum_veri, model)
+    print(f"Bilgi amaçlı — varsayılan yeni oyuncu p: {yeni_oyuncu['konu_p']} → zor: {yeni_oyuncu['zor_konular']}")
+    print(f"Bilgi amaçlı — 3. soru eğitim-sunum farkı: {sunum_farki}")
 
     tum = pd.read_csv(VERI)
     ornek = X.iloc[0]
@@ -551,6 +624,8 @@ def main() -> None:
             "kesisim": round(float(model.named_steps["lr"].intercept_[0]), 4),
             "katsayilar": {k["ozellik"]: k["katsayi_olcekli"] for k in kats},
             "bilgi_teshis": teshis,
+            "bilgi_varsayilan_yeni_oyuncu": yeni_oyuncu,
+            "bilgi_egitim_sunum_farki": sunum_farki,
         },
         "eval": {"bolme": "StratifiedGroupKFold", "n_splits": N_KATLAMA, "shuffle": True,
                  "random_state": SEED, "grup": "proje_id", "katlamalar": cv["katlamalar"]},
