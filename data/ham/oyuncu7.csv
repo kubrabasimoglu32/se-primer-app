@@ -1,0 +1,4 @@
+proje_id,oturum_id,soru_id,konu,slot,seviye,konu_beceri_puani,konudaki_onceki_soru_sayisi,konudaki_onceki_riskli_sayisi,son_karar_suresi_sn,son_gerekce_uzunlugu,oturum_no,soru_zorlugu,zorluk_kaynagi,karar_suresi_sn,basari,kaynak,p_model
+043ba9d7-de6e-4850-a032-677bf60c9b35,4c27b0c2-371d-478b-88ae-4559810e0852,M-02,mimari,1,0,2,0,0,0,0,1,1,yazitura,7.32,1,gercek,
+043ba9d7-de6e-4850-a032-677bf60c9b35,4c27b0c2-371d-478b-88ae-4559810e0852,G-01,guvenlik,2,0,1,0,0,7.32,0,1,1,kural,10.08,1,gercek,
+043ba9d7-de6e-4850-a032-677bf60c9b35,4c27b0c2-371d-478b-88ae-4559810e0852,T-03,test,3,0,0,0,0,10.08,0,1,0,yazitura,6.22,1,gercek,

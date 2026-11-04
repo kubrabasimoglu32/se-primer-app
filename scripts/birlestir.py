@@ -110,27 +110,32 @@ def oyuncu_tablosu(satirlar: list[dict[str, str]]) -> None:
         print("\nGerçek oyuncu yok.")
         return
 
-    basliklar = ["oyuncu (proje_id)", "oturum", "satır", "zor satır", "basari=0", "oturum_no baş.", "medyan karar sn"]
+    basliklar = ["oyuncu (proje_id)", "dosya", "oturum", "satır", "zor satır", "zorda basari=0", "seviye",
+                 "oturum_no baş.", "medyan karar sn"]
     tablo = []
     for proje_id, rs in gruplar.items():
         oturum_nolar = [int(n) for n in (sayi(r["oturum_no"]) for r in rs) if n is not None]
         sureler = [s for s in (sayi(r["karar_suresi_sn"]) for r in rs) if s is not None]
         tablo.append([
             proje_id[:8],
+            ", ".join(sorted({r["_dosya"] for r in rs})),
             str(len({r["oturum_id"] for r in rs})),
             str(len(rs)),
             str(sum(1 for r in rs if r["soru_zorlugu"] == "1")),
-            str(sum(1 for r in rs if r["basari"] == "0")),
+            str(sum(1 for r in rs if r["soru_zorlugu"] == "1" and r["basari"] == "0")),
+            "/".join(sorted({r["seviye"] for r in rs})),
             str(min(oturum_nolar)) if oturum_nolar else "-",
             f"{statistics.median(sureler):.2f}" if sureler else "-",
         ])
     tablo.sort(key=lambda t: t[0])
     toplam = [
-        "TOPLAM",
-        str(sum(int(t[1]) for t in tablo)),
+        f"TOPLAM ({len(tablo)} oyuncu)",
+        "",
         str(sum(int(t[2]) for t in tablo)),
         str(sum(int(t[3]) for t in tablo)),
         str(sum(int(t[4]) for t in tablo)),
+        str(sum(int(t[5]) for t in tablo)),
+        "",
         "",
         "",
     ]
@@ -150,6 +155,7 @@ def oyuncu_tablosu(satirlar: list[dict[str, str]]) -> None:
 
 
 def main() -> int:
+    sys.stdout.reconfigure(encoding="utf-8")  # Windows konsolu (cp1254) "→" gibi karakterlerde çökmesin
     ap = argparse.ArgumentParser(description="data/ham/*.csv dosyalarını data/oturumlar.csv'de birleştirir.")
     ap.add_argument("--ham", type=Path, default=KOK / "data" / "ham")
     ap.add_argument("--sentetik", type=Path, default=KOK / "data" / "sentetik.csv")
@@ -169,15 +175,23 @@ def main() -> int:
         adi = {",": "virgül", ";": "noktalı virgül", "\t": "sekme"}[ayirici]
         print(f"{yol.name}: {len(satirlar)} satır (ayırıcı: {adi})")
         for r in satirlar:
+            r["_dosya"] = yol.name  # yalnız tablo için; çıktıya yazılmaz
             anahtar = (r["oturum_id"], r["soru_id"])
             if anahtar in gorulen:
                 tekrar += 1
-                if gorulen[anahtar] != r:
+                if any(gorulen[anahtar][k] != r[k] for k in SUTUNLAR):
                     celisen += 1
                 continue
             gorulen[anahtar] = r
 
     birlesik = list(gorulen.values())
+    proje_dosyalari: dict[str, set[str]] = {}
+    for yol in dosyalar:
+        for r in dosya_oku(yol)[0]:
+            proje_dosyalari.setdefault(r["proje_id"], set()).add(yol.name)
+    for p, d in sorted(proje_dosyalari.items()):
+        if len(d) > 1:
+            print(f"UYARI: proje_id {p[:8]} birden fazla dosyada: {', '.join(sorted(d))}")
     print(f"\nTekrar eden (oturum_id, soru_id) atıldı: {tekrar}", end="")
     print(f" (içeriği farklı olan: {celisen} — ilk gelen tutuldu)" if celisen else "")
 
@@ -192,7 +206,7 @@ def main() -> int:
 
     args.cikti.parent.mkdir(parents=True, exist_ok=True)
     with args.cikti.open("w", encoding="utf-8", newline="") as f:
-        yazici = csv.DictWriter(f, fieldnames=SUTUNLAR, lineterminator="\n")
+        yazici = csv.DictWriter(f, fieldnames=SUTUNLAR, extrasaction="ignore", lineterminator="\n")
         yazici.writeheader()
         yazici.writerows(birlesik + sentetik)
     print(f"Yazıldı: {args.cikti} — {len(birlesik)} ham satır + {len(sentetik)} sentetik satır"
