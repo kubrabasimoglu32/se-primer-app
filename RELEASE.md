@@ -1,5 +1,27 @@
 # Sürüm notları — SE Primer zorluk modeli
 
+## v2.0.1 — 4 Kasım 2026 (yalnız belge)
+
+| | |
+|---|---|
+| Etiket | `v2.0.1` |
+| Commit | `576e42b0e833d418d13c3fe9e528e4194466b8f5` |
+| Sabit model URL'si | https://huggingface.co/Kubra37/se-primer-zorluk/resolve/576e42b0e833d418d13c3fe9e528e4194466b8f5/model.onnx |
+| Sabit config URL'si | https://huggingface.co/Kubra37/se-primer-zorluk/resolve/576e42b0e833d418d13c3fe9e528e4194466b8f5/config.json |
+| `model.onnx` sha256 | `3caee4a38b1a2ad0ad645cf78eb80979f8472490a89966d87c8fab49b8dd5c51` (v2.0 ile **aynı**) |
+
+- **Ne değişti:** Yalnız belgeler. Model kartında (`README.md`) yeni sınırlar var: varsayılan yeni oyuncu için konu
+  başına p, 3. soru için eğitim–sunum farkı, `son_karar_suresi_sn` teşhisi. `config.json`'a bu bilgilerin sayıları
+  eklendi (`metrics.bilgi_*`); özellik sırası, sınıflar ve eşik aynı.
+- **Model değişmedi:** `model.onnx` dosyası v2.0 ile birebir aynı. `scripts/yayinla.py --onceki v2.0`, Hub'daki iki
+  commit'ten dosyayı indirip sha256'ları yerel `model/model.onnx` ile karşılaştırdı; üçü aynı. Bu yüzden bir yama
+  sürümü (`2.0.1`), yeni bir model sürümü değil.
+- **Uygulama neden yeni commit'e geçti:** Uygulama modeli ve `config.json`'u aynı commit'ten indirir
+  (`modelKaynak.ts`). Uygulamanın kullandığı commit ile Hub'da okunan model kartının aynı olması gerekir; böylece
+  "hangi sürümü çalıştırıyoruz ve sınırları ne" sorusunun tek bir cevabı olur. Tahminler değişmez (aynı
+  `model.onnx`). Geri dönmek gerekirse `modelKaynak.ts` yine v2.0'a (`28818c9b…`) çevrilebilir; o commit Hub'da
+  duruyor.
+
 ## v2.0 — 4 Kasım 2026
 
 | | |
@@ -126,7 +148,7 @@ Geri alma, bir önceki adımın hex aralığına dönmek ya da `MODEL_COMMIT`'i 
 
 | | Tarayıcı (onnxruntime-web, GitHub Pages) | Mobil cihaz içi (Expo, gömülü ONNX) | Kendi sunucu (Render / Rails / Express) |
 |---|---|---|---|
-| **1. Ağ zorunlu mu, gecikme nasıl?** | İlk açılışta `model.onnx` ve onnxruntime-web indirilir (ilk yükleme gecikmesi). **Ölçülmüş örnek:** onnxruntime-web'in wasm dosyası 14.8 MB (gzip 3.9 MB); `model.onnx` yalnız 573 B. Sorular seçilirken model en fazla ~3 sn beklendiği için yavaş bağlantıda ilk oturum eski kurala düşer, sonraki oturumlar (dosya önbellekte) modeli kullanır. Sonra tahmin yereldir, ağ gerekmez. Ağ yoksa §10.5 yedeği çalışır. | İnternetsiz çalışır. Model uygulamayla gelir, gecikme en düşük. Yeni model için uygulama güncellemesi gerekir. | Her tahmin bir ağ isteğidir. Ağ gecikmesi ve ücretsiz katmanda uyuyan sunucunun ilk istekte uyanma gecikmesi var. Ağ yoksa tahmin yok. |
+| **1. Ağ zorunlu mu, gecikme nasıl?** | İlk açılışta `model.onnx` ve onnxruntime-web indirilir (ilk yükleme gecikmesi). **Ölçülmüş örnek:** onnxruntime-web'in wasm dosyası 14.8 MB (gzip 3.9 MB); `model.onnx` yalnız 573 B. Sorular seçilirken model en fazla ~3 sn beklendiği için yavaş bağlantıda ilk oturum eski kurala düşer, sonraki oturumlar (dosya önbellekte) modeli kullanır. **Önbellek ölçümü** (canlı Pages, Chrome, ~31 KB/s bağlantı, Resource Timing): ilk açılışta wasm 141.5 sn'de indi (3.87 MB aktarıldı); yeniden açılışta 58 ms, ağdan 0 bayt (tarayıcı önbelleği). Pages `Cache-Control: max-age=600` ve `ETag` gönderir: 10 dakika içinde dosya doğrudan önbellekten okunur, sonra 304 ile doğrulanır, gövde yeniden inmez. Sonra tahmin yereldir, ağ gerekmez. Ağ yoksa §10.5 yedeği çalışır. | İnternetsiz çalışır. Model uygulamayla gelir, gecikme en düşük. Yeni model için uygulama güncellemesi gerekir. | Her tahmin bir ağ isteğidir. Ağ gecikmesi ve ücretsiz katmanda uyuyan sunucunun ilk istekte uyanma gecikmesi var. Ağ yoksa tahmin yok. |
 | **2. Veri cihazdan çıkar mı? (KVKK)** | Çıkmaz. 7 girdi tarayıcıda hesaplanır ve orada kalır. | Çıkmaz. | Çıkar. Öğrencinin davranış verisi (beceri puanı, karar süresi, riskli seçim sayısı) her istekte sunucuya gider; saklama, erişim ve aydınlatma yükümlülüğü doğar. |
 | **3. Model gizli kalır mı? (REA riski)** | Kalmaz; `model.onnx` istemciye iner ve açılıp okunabilir. | Kalmaz; uygulama paketinden çıkarılabilir. | Dosya gizli kalır, ama istek-yanıt üzerinden çok sayıda sorgu ile model taklit edilebilir (tersine mühendislik). |
 

@@ -6,7 +6,7 @@
  */
 
 export const MODEL_REPO = "Kubra37/se-primer-zorluk";
-export const MODEL_SURUM = "v2.0";
-export const MODEL_COMMIT = "28818c9b19f5ab928c1292ba930096f43def4446";
-export const MODEL_URL = "https://huggingface.co/Kubra37/se-primer-zorluk/resolve/28818c9b19f5ab928c1292ba930096f43def4446/model.onnx";
-export const CONFIG_URL = "https://huggingface.co/Kubra37/se-primer-zorluk/resolve/28818c9b19f5ab928c1292ba930096f43def4446/config.json";
+export const MODEL_SURUM = "v2.0.1";
+export const MODEL_COMMIT = "576e42b0e833d418d13c3fe9e528e4194466b8f5";
+export const MODEL_URL = "https://huggingface.co/Kubra37/se-primer-zorluk/resolve/576e42b0e833d418d13c3fe9e528e4194466b8f5/model.onnx";
+export const CONFIG_URL = "https://huggingface.co/Kubra37/se-primer-zorluk/resolve/576e42b0e833d418d13c3fe9e528e4194466b8f5/config.json";

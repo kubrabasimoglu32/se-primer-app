@@ -124,6 +124,38 @@
         },
         "en_etkili_gercek_oyuncu": "7200e59a"
       }
+    },
+    "bilgi_varsayilan_yeni_oyuncu": {
+      "profil": "seviye 0, ilk oturum, geçmiş yok; beceri puanları tanışmadaki varsayılan",
+      "konu_p": {
+        "kapsam": 0.5903,
+        "mimari": 0.5903,
+        "veriTabani": 0.5903,
+        "dosyaDuzeni": 0.5903,
+        "test": 0.3055,
+        "guvenlik": 0.4432,
+        "dagitim": 0.4432,
+        "rapor": 0.4432
+      },
+      "beceri_p": {
+        "0": 0.3055,
+        "1": 0.4432,
+        "2": 0.5903
+      },
+      "zor_konular": [
+        "kapsam",
+        "mimari",
+        "veriTabani",
+        "dosyaDuzeni"
+      ]
+    },
+    "bilgi_egitim_sunum_farki": {
+      "satir": 254,
+      "ort_mutlak_fark": 0.072,
+      "maks_mutlak_fark": 0.3108,
+      "karari_degisen": 26,
+      "gercek_satir": 19,
+      "gercek_karari_degisen": 1
     }
   },
   "eval": {

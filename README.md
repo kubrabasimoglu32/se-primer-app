@@ -15,7 +15,7 @@ yolun sonucunu ve nedenini gösterir. Proje bitene kadar öğrencinin gelişimin
 |---|---|
 | Uygulama (AI Studio) | https://ai.studio/apps/8074a940-e9fe-4c74-96fc-ff23a83151f5?fullscreenApplet=true|
 | Demo videosu (60 sn, Cypress) | https://youtu.be/ScYtHzTFs4Q |
-| Hugging Face model (v2.0, commit'e sabit) | https://huggingface.co/Kubra37/se-primer-zorluk/tree/28818c9b19f5ab928c1292ba930096f43def4446 |
+| Hugging Face model (v2.0.1, commit'e sabit) | https://huggingface.co/Kubra37/se-primer-zorluk/tree/576e42b0e833d418d13c3fe9e528e4194466b8f5 |
 
 > **Erişim notu:** Uygulama AI Studio'da paylaşıldı. Bazı Google hesaplarında yaş doğrulaması ya da AI Studio
 > kullanım şartlarının kabul edilmemiş olması nedeniyle link açılmayabilir. Açılmazsa e-posta adresinizi
