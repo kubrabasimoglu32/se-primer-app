@@ -334,4 +334,6 @@ kendisine bağlı; sıra yine her soruda karışık.
 
 ## Yapay zekâ araçlarını nasıl kullandım
 
-<!-- Bu bölümü ben yazacağım. -->
+- Claude (sohbet): ödevi anlamak, model hedefini seçmek (A/B/C seçenekleri, C’yi seçtim), adım planı.
+- Claude Code: kodun çoğu, testler, belgelerin taslakları.
+- Elle düzelttiğin/karar verdiğin yerler: soru bankasının zorluk etiketlerini onaylamak, D-03 derinleş sorusunu yeniden yazmak, G-03 hatası çıkınca soruyu düzeltme  kararı, deneme verilerini eğitimden çıkarmak, sonuç beklentiye uymayınca sentetik formülü değiştirmeme kararı, eşiği sonradan değiştirmeme kararı.
