@@ -9,5 +9,14 @@ module.exports = defineConfig({
     viewportHeight: 844,
     video: true,          // demo videosu için
     defaultCommandTimeout: 8000,
+    setupNodeEvents(on) {
+      // parite.cy.js gerçek farkları terminale (cypress run çıktısına) yazar.
+      on('task', {
+        log(mesaj) {
+          console.log(mesaj)
+          return null
+        },
+      })
+    },
   },
 })

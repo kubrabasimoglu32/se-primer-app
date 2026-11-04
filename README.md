@@ -47,6 +47,10 @@ train.py                     Eğitim + eval kapısı (spec §10.6) + ONNX paketi
 scripts/yayinla.py           model/ → Hugging Face (v2.0 etiketi, commit'e sabit URL, doğrulama)
 src/primer/modelKaynak.ts    Uygulamanın kullandığı model sürümü ve commit'e sabit URL'ler
 RELEASE.md                   Sürüm notları, geri alma, devreye alma planı, ödünleşim matrisi
+tests/
+  parite.py                  Diferansiyel test kahini (Python + onnxruntime) → parite.json
+  parite.json                5 referans girdi ve Python'un p(basari) değerleri
+src/components/PariteScreen.tsx  ?parite=1: aynı girdiler uygulamanın model.ts'iyle (onnxruntime-web)
 requirements.txt             Python 3.12 bağımlılıkları (sürümler sabit)
 model/
   model.onnx                 Zorluk modeli (train.py üretir)
@@ -133,6 +137,46 @@ Testlerde yapay zekâ çağrıları hata döndürecek şekilde sabitlenir. Uygul
 | 7 | Seçimden önce risk ve puan bilgisi görünmez, seçimden sonra görünür (kullanıcı testinden eklendi) |
 
 **Test sırasında bulunan bir sorun:** İlk testte "hep düşük riskli seçim → sağlıklı" bekledik. Örnek proje 3 açık riskle başladığı için kurala göre sonuç "risk" çıktı. Test, spec'teki kuralı (açık risk sayısı azalmalı) yanlış yorumluyordu. Beklenti "yeni risk eklenmez" olarak düzeltildi.
+
+## Diferansiyel test (parite)
+
+Aynı model dosyası iki farklı ortamda aynı girdilere aynı cevabı vermeli.
+
+- **Test kahini (oracle):** Python + onnxruntime (`tests/parite.py`). Modeli Hugging Face'teki sabit commit'ten
+  (`modelKaynak.ts`) indirir. sha256'sını `model/model.onnx` ve Cypress fixture'ı ile karşılaştırır; farklıysa durur.
+  5 referans girdinin `p(basari)` değerini `tests/parite.json`'a yazar.
+- **Test edilen:** tarayıcı. `?parite=1` sayfası aynı 5 girdiyi uygulamanın kendi çıkarım koduyla çalıştırır
+  (`src/primer/model.ts` → onnxruntime-web; soru seçerken kullanılan fonksiyonun aynısı, ayrı bir kopya değil) ve
+  `data-cy="p-0".."p-4"` ile 8 ondalık gösterir.
+- **Kontrol** (`e2e/cypress/e2e/parite.cy.js`): her girdide `|p_tarayıcı − p_python| < 1e-4` ve 0.5 eşiğindeki
+  karar (zor/kolay) aynı.
+
+```
+.venv\Scripts\python tests/parite.py                                  # kahin → tests/parite.json
+cd e2e && npx cypress run --browser chrome --spec cypress/e2e/parite.cy.js
+```
+
+**Sonuç** (model v2.0.1, `576e42b0`; maks |fark| = **5.93e-8**):
+
+| Girdi (spec §10.2 sırası) | Neden | Python | Tarayıcı | \|fark\| | Karar |
+|---|---|---|---|---|---|
+| `[0, 1, 0, 0, 0, 0, 1]` | demo profili A | 0.4432462156 | 0.44324622 | 4.4e-9 | kolay |
+| `[2, 1, 0, 0, 0, 0, 1]` | demo profili B | 0.5629031062 | 0.56290311 | 3.8e-9 | zor |
+| `[1, 3, 2, 2, 5, 20, 2]` | eşiğe çok yakın | 0.5000209212 | 0.50002092 | 1.2e-9 | zor |
+| `[0, 0, 12, 12, 0.5, 0, 10]` | uç değer (çok riskli geçmiş) | 0.0003167093 | 0.00031665 | 5.9e-8 | kolay |
+| `[0, 0, 0, 0, 0, 0, 1]` | sıfır geçmişli ilk soru | 0.3054673374 | 0.30546734 | 2.6e-9 | kolay |
+
+- **Neden tolerans 1e-4:** Model girdisi ve çıktısı **float32**. float32'nin göreli duyarlılığı ~1e-7. Python
+  onnxruntime (yerel CPU) ile onnxruntime-web (WebAssembly) aynı işlemleri farklı sırayla ya da farklı matematik
+  kütüphaneleriyle yapabilir (ör. `exp`); son basamaklar farklı çıkabilir. 1e-4, bu yuvarlama farklarından
+  binlerce kat büyük ama ürün açısından anlamlı her farktan (yanlış ağırlık, yanlış özellik sırası, yanlış
+  ölçekleme) küçük. Bu hatalar p'yi yüzde düzeyinde değiştirir.
+- **Ölçülen farklar:** Dört girdide fark ≤ 5e-9; bu yalnız ekrandaki 8 ondalığa yuvarlamadır. Uç değerde
+  (p ≈ 0.0003) gerçek bir float32 farkı var: 5.9e-8 mutlak (göreli ~2e-4). p sıfıra yaklaştıkça göreli fark büyür;
+  bu yüzden kontrol mutlak farkla yapılır.
+- **Neden eşiğe yakın bir girdi:** Uygulama p'yi değil, `p >= 0.5` kararını kullanır. p eşikten uzaktaysa küçük bir
+  sayısal fark kararı hiç değiştirmez; test yalnız sayıyı ölçmüş olur. p = 0.50002 olan girdide eşiğe uzaklık
+  (2.1e-5) toleransın altında. Böyle bir girdide iki ortamın **kararı** da aynı olmalı; test bunu ayrıca kontrol eder.
 
 ## Tutor eval özeti
 

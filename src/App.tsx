@@ -24,6 +24,7 @@ import { konuZorluklariniTahminEt, modeliBekle, modeliYukle } from "./primer/mod
 import { analizEtVeKartOlustur, sorulariUyarla } from "./services/api";
 import { onMaskelemeBildirimi } from "./primer/maskele";
 import { EvalScreen } from "./components/EvalScreen";
+import { PariteScreen } from "./components/PariteScreen";
 import {
   OzellikVektoru,
   csvIndir,
@@ -335,6 +336,11 @@ export default function App() {
     setAktifSorular([]);
     setEkran("tanisma");
   };
+
+  // Diferansiyel (parite) test sayfası: ?parite=1 (tests/parite.json, e2e/cypress/e2e/parite.cy.js)
+  if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("parite") === "1") {
+    return <PariteScreen />;
+  }
 
   if (isEvalMode) {
     return (

@@ -1,0 +1,107 @@
+{
+  "aciklama": "Diferansiyel test: Python (onnxruntime, test kahini) ile uygulama (onnxruntime-web) aynı girdilerde aynı p(basari)'yı vermeli. tests/parite.py üretir; elle değiştirmeyin.",
+  "model": {
+    "repo": "Kubra37/se-primer-zorluk",
+    "surum": "v2.0.1",
+    "commit": "576e42b0e833d418d13c3fe9e528e4194466b8f5",
+    "sha256": "3caee4a38b1a2ad0ad645cf78eb80979f8472490a89966d87c8fab49b8dd5c51"
+  },
+  "kahin": {
+    "kutuphane": "onnxruntime (Python)",
+    "surum": "1.31.1",
+    "girdi_tipi": "float32"
+  },
+  "tolerans": 0.0001,
+  "esik": 0.5,
+  "ozellikler": [
+    "seviye",
+    "konu_beceri_puani",
+    "konudaki_onceki_soru_sayisi",
+    "konudaki_onceki_riskli_sayisi",
+    "son_karar_suresi_sn",
+    "son_gerekce_uzunlugu",
+    "oturum_no"
+  ],
+  "girdiler": [
+    {
+      "ad": "demo_A",
+      "aciklama": "Demo profili A: Yeni başladım, ilk oturum, öğrenmek istediği konu Rapor (beceri 1)",
+      "girdi": {
+        "seviye": 0,
+        "konu_beceri_puani": 1,
+        "konudaki_onceki_soru_sayisi": 0,
+        "konudaki_onceki_riskli_sayisi": 0,
+        "son_karar_suresi_sn": 0,
+        "son_gerekce_uzunlugu": 0,
+        "oturum_no": 1
+      },
+      "p": 0.4432462155818939,
+      "p_8": "0.44324622",
+      "karar": "kolay"
+    },
+    {
+      "ad": "demo_B",
+      "aciklama": "Demo profili B: Deneyimliyim, ilk oturum, öğrenmek istediği konu Rapor (beceri 1)",
+      "girdi": {
+        "seviye": 2,
+        "konu_beceri_puani": 1,
+        "konudaki_onceki_soru_sayisi": 0,
+        "konudaki_onceki_riskli_sayisi": 0,
+        "son_karar_suresi_sn": 0,
+        "son_gerekce_uzunlugu": 0,
+        "oturum_no": 1
+      },
+      "p": 0.562903106212616,
+      "p_8": "0.56290311",
+      "karar": "zor"
+    },
+    {
+      "ad": "esige_yakin",
+      "aciklama": "Eşiğe çok yakın (|p - 0.5| < 0.01): küçük bir sayısal fark kararı çevirebilir mi?",
+      "girdi": {
+        "seviye": 1,
+        "konu_beceri_puani": 3,
+        "konudaki_onceki_soru_sayisi": 2,
+        "konudaki_onceki_riskli_sayisi": 2,
+        "son_karar_suresi_sn": 5,
+        "son_gerekce_uzunlugu": 20,
+        "oturum_no": 2
+      },
+      "p": 0.5000209212303162,
+      "p_8": "0.50002092",
+      "karar": "zor"
+    },
+    {
+      "ad": "uc_deger",
+      "aciklama": "Uç değer: çok riskli geçmiş (konuda 12 soru, 12'si riskli), 10. oturum, çok hızlı karar",
+      "girdi": {
+        "seviye": 0,
+        "konu_beceri_puani": 0,
+        "konudaki_onceki_soru_sayisi": 12,
+        "konudaki_onceki_riskli_sayisi": 12,
+        "son_karar_suresi_sn": 0.5,
+        "son_gerekce_uzunlugu": 0,
+        "oturum_no": 10
+      },
+      "p": 0.0003167092800140381,
+      "p_8": "0.00031671",
+      "karar": "kolay"
+    },
+    {
+      "ad": "sifir_gecmis",
+      "aciklama": "Sıfır geçmişli ilk soru: seviye 0, beceri 0, hiç önceki soru yok, 1. oturum",
+      "girdi": {
+        "seviye": 0,
+        "konu_beceri_puani": 0,
+        "konudaki_onceki_soru_sayisi": 0,
+        "konudaki_onceki_riskli_sayisi": 0,
+        "son_karar_suresi_sn": 0,
+        "son_gerekce_uzunlugu": 0,
+        "oturum_no": 1
+      },
+      "p": 0.3054673373699188,
+      "p_8": "0.30546734",
+      "karar": "kolay"
+    }
+  ]
+}
