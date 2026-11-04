@@ -284,14 +284,20 @@ Uygulama çökmez ve kullanıcıya hata gösterilmez.
     Kapı kararı bundan etkilenmez.
 - **Yayınlanan model:** Kapı geçilirse çapraz doğrulamadaki modellerden biri değil, **tüm veriyle yeniden eğitilen**
   model yayınlanır. Çapraz doğrulama yalnızca bu eğitim tarifinin genelleme başarısını ölçer.
-- **Sentetik veri:** Sentetik satırlar da `proje_id` taşır; her sahte oyuncu 10–15 satırlık ayrı bir gruptur
-  (Adım 3'te üretilecek). Böylece sentetik oyuncular da gruplar arasında bölünür.
+- **Sentetik veri:** Sentetik satırlar da `proje_id` taşır; her sahte oyuncu 12–18 satırlık (4–6 oturum) ayrı bir
+  gruptur (`scripts/sentetik.py`). Böylece sentetik oyuncular da gruplar arasında bölünür.
 
 **Değişiklik kaydı — 31 Ekim 2026, eğitimden önce.** Bölme "stratified %30 hold-out" yerine
 "5 katlı StratifiedGroupKFold, grup = `proje_id`" oldu; kapı tek hold-out AUC yerine 5 katlamanın ortalama AUC'si oldu.
 Eşik (0.65) aynı kaldı. **Gerekçe:** Gerçek veride 3–5 kişi var. Gruplu tek bir hold-out'ta test kümesi 1–2 kişiye
 düşer ve kapı kararı, o kişilerin kim olduğuna bağlı olarak şansa kalır. 5 katlı gruplu çapraz doğrulamada her kişi
 bir kez test kümesinde yer alır; ortalama daha kararlı bir ölçüdür, standart sapma da oynaklığı görünür kılar.
+
+**Değişiklik kaydı — 4 Kasım 2026, eğitimden önce, yalnız açıklama güncellemesi; eşik ve yöntem değişmedi.**
+Sentetik oyuncu grubu "10–15 satır" yerine "12–18 satır (4–6 oturum)" yazıldı; üretici (`scripts/sentetik.py`)
+böyle üretiyor. §10.8'de gerçek kişi sayısı ("3–5 kişi") sabit yazılmıyor; kesin sayılar `train.py` tarafından
+hesaplanıp model kartına ve `config.json`'a yazılıyor. Kapı (5 katlama ortalama ROC-AUC >= 0.65), bölme
+(`StratifiedGroupKFold`, grup = `proje_id`) ve girdiler aynı kaldı.
 
 ### 10.7 Kabul örnekleri (v2)
 
@@ -312,8 +318,9 @@ bir kez test kümesinde yer alır; ortalama daha kararlı bir ölçüdür, stand
 
 ### 10.8 Model kartına girecek sınırlar
 
-- **Az sayıda gerçek kişi, AUC oynak.** Gerçek veri 3–5 kişiden geliyor. Katlama bazında AUC'ler ve standart sapma
-  bu oynaklığı gösterir; ortalama AUC kesin bir başarı ölçüsü olarak okunmamalıdır.
+- **Az sayıda gerçek kişi, AUC oynak.** Gerçek veri az sayıda oyuncudan geliyor; kesin oyuncu, oturum ve zor satır
+  sayıları `train.py` tarafından hesaplanıp model kartına ve `config.json`'a yazılır. Katlama bazında AUC'ler ve
+  standart sapma bu oynaklığı gösterir; ortalama AUC kesin bir başarı ölçüsü olarak okunmamalıdır.
 - **İlk iki gerçek oyuncu örnek projeyle başladı.** Bu oyuncularda `oturum_no` 2'den başlar ve ilk girdiler örnek
   projenin hazır geçmişinden gelir. Satırlar veriden çıkarılmadı (bkz. `data/SOZLUK.md`).
 - **İkinci oyuncuda 3. oturumdan sonra dikkat düşüyor.** Karar süresi 3 saniyenin altına iniyor ve sorular tekrar
