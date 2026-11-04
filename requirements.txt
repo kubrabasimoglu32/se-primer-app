@@ -1,0 +1,16 @@
+# SE Primer — Python bağımlılıkları (train.py, scripts/)
+# Python 3.12 (başlangıç reposuyla aynı; Python 3.15 için onnxruntime paketi yok).
+# Sürümler .venv'den (pip freeze) sabitlendi: başka ortamda da aynı metrikler için.
+#   py -3.12 -m venv .venv
+#   .venv\Scripts\python -m pip install -r requirements.txt
+scikit-learn==1.9.1
+skl2onnx==1.20.0
+onnx==1.23.2
+onnxruntime==1.31.1
+pandas==3.1.0
+numpy==2.5.4
+# sklearn'ün sayısal sonuçlarını etkileyen dolaylı bağımlılıklar
+scipy==1.18.1
+joblib==1.6.0
+threadpoolctl==3.7.0
+protobuf==7.36.2

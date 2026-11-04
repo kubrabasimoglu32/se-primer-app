@@ -42,13 +42,33 @@ data/
 scripts/
   sentetik.py                Sentetik veri üreticisi (seed = 13)
   birlestir.py               data/ham/*.csv + data/sentetik.csv → data/oturumlar.csv
+train.py                     Eğitim + eval kapısı (spec §10.6) + ONNX paketi
+requirements.txt             Python 3.12 bağımlılıkları (sürümler sabit)
+model/
+  model.onnx                 Zorluk modeli (train.py üretir)
+  config.json                Özellik sırası, sınıflar, metrikler, eşik (sözleşme)
+  README.md                  Model kartı
 ```
+
+## Model (Python 3.12)
+
+Kurulum ve eğitim (Windows, proje kökünde):
+
+```
+py -3.12 -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python train.py
+```
+
+`train.py` eval kapısını geçemezse (`model/`'e hiçbir şey yazmadan) hata koduyla durur. macOS/Linux'ta
+`.venv\Scripts\python` yerine `.venv/bin/python` kullanılır. Python 3.12 kullanılır
+(başlangıç reposuyla aynı; Python 3.15 için onnxruntime paketi yok).
 
 ## Veri
 
 ```
-python scripts/sentetik.py     # data/sentetik.csv (her çalıştırmada aynı dosya)
-python scripts/birlestir.py    # data/oturumlar.csv
+.venv\Scripts\python scripts/sentetik.py     # data/sentetik.csv (her çalıştırmada aynı dosya)
+.venv\Scripts\python scripts/birlestir.py    # data/oturumlar.csv
 ```
 
 **Sentetik veri:** üretici `scripts/sentetik.py`, **tohum `SEED = 13`** (tek bir `random.Random(13)`).
