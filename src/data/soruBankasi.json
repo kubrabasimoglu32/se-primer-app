@@ -85,7 +85,8 @@
           "neden": "Testin geçmesi, testin kontrol ettiği şeyin doğru olduğunu gösterir. Neyin kontrol edileceğini kabul örneği belirler."
         }
       ],
-      "gerekceAlani": true
+      "gerekceAlani": true,
+      "derinles": "Bir sınıf arkadaşın bu özelliğin bittiğini sana sormadan doğrulayabilmek için hangi girdiyi verip hangi sonucu görmeli?"
     },
     {
       "id": "M-01",
@@ -119,7 +120,8 @@
           "neden": "Ön yüzdeki kod kullanıcının elindedir. Kontrolü yalnızca ön yüze koymak, kontrolü kullanıcıya bırakmaktır."
         }
       ],
-      "gerekceAlani": true
+      "gerekceAlani": true,
+      "derinles": "Tarayıcıdaki kodu kullanıcı değiştirebiliyorsa, veri tabanına yazılan bir kaydın geçerli olduğundan nerede ve nasıl emin oluyorsun?"
     },
     {
       "id": "M-02",
@@ -158,7 +160,8 @@
           "neden": "Bulutun ölçeklenmesi her bileşen için geçerli değildir. Veri tabanı ve dış servislerin kendi sınırları vardır."
         }
       ],
-      "gerekceAlani": true
+      "gerekceAlani": true,
+      "derinles": "Projende ilk tıkanacak yerin neresi olduğunu tahmin etmek yerine hangi ölçümle kanıtlayabilirsin?"
     },
     {
       "id": "M-03",
@@ -247,7 +250,8 @@
           "neden": "Bir özelliğin olmaması, o durumun yaşanmayacağı anlamına gelmez. Kararı erken vermek, sonradan veri düzeltmekten ucuzdur."
         }
       ],
-      "gerekceAlani": true
+      "gerekceAlani": true,
+      "derinles": "Silinen bir kullanıcının kayıtlarından hangisini saklamak zorunda kalabilirsin ve o kayıt artık kime ait sayılır?"
     },
     {
       "id": "V-03",
@@ -386,7 +390,8 @@
           "neden": "Arama, düzenin yerini tutmaz. Benzer adlı dosyalar çoğaldıkça yanlış yeri değiştirme riski artar."
         }
       ],
-      "gerekceAlani": true
+      "gerekceAlani": true,
+      "derinles": "Projeyi hiç görmemiş biri sadece klasör adlarına bakarak giriş ekranının kodunu bulabilir mi; bulamıyorsa hangi ad yanıltıyor?"
     },
     {
       "id": "T-01",
@@ -420,7 +425,8 @@
           "neden": "Test sayısı güven ölçüsü değildir. Önemli olan neyin test edildiğidir."
         }
       ],
-      "gerekceAlani": true
+      "gerekceAlani": true,
+      "derinles": "Seçtiğin şey teslim günü bozulsa kullanıcı bunu hangi adımda fark ederdi ve testin onu bundan önce nasıl yakalardı?"
     },
     {
       "id": "T-02",
@@ -459,7 +465,8 @@
           "neden": "Kullanıcı şikâyeti en geç ve en pahalı uyarıdır. Çoğu kullanıcı haber vermez, sadece gider."
         }
       ],
-      "gerekceAlani": true
+      "gerekceAlani": true,
+      "derinles": "Bu akış gece yarısı bozulsa sabah ilk kim, hangi işaretle haberdar olur?"
     },
     {
       "id": "T-03",
@@ -527,7 +534,8 @@
           "neden": "Bir veriyi neden tuttuğunu söyleyemiyorsan, tutmaman gerekiyor olabilir."
         }
       ],
-      "gerekceAlani": true
+      "gerekceAlani": true,
+      "derinles": "Tuttuğun alanlardan birini yarın silsen hangi özellik çalışmaz hâle gelir; hiçbiri değilse o alan neden orada?"
     },
     {
       "id": "G-02",
@@ -615,7 +623,8 @@
           "neden": "'Küçük değişiklik' etkisinin küçük olduğu anlamına gelmez. Etki ancak denenerek görülür."
         }
       ],
-      "gerekceAlani": true
+      "gerekceAlani": true,
+      "derinles": "Bu değişiklik canlıda bir şeyi bozarsa önceki sürüme kaç dakikada ve hangi adımlarla dönersin?"
     },
     {
       "id": "Y-02",
@@ -694,7 +703,8 @@
         }
       ],
       "notAlani": "Bu haftanın en önemli kararını bir cümleyle yaz (isteğe bağlı, karar kaydına eklenir)",
-      "gerekceAlani": true
+      "gerekceAlani": true,
+      "derinles": "Üç ay sonra ekibe katılan biri bu kararın nedenini sana sormadan anlayabilmeli; bunun için neyi nereye yazardın?"
     },
     {
       "id": "R-03",
