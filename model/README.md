@@ -92,6 +92,31 @@ log-odds'taki değişim. İşaret, etkinin yönünü gösterir. Kesişim (interc
 
 Bu katsayılar büyük ölçüde sentetik üreticinin kuralını yansıtır (bkz. Sınırlar). Nedensel bir ilişki olarak okunmamalıdır.
 
+**Bilgi amaçlı: yalnız sentetik satırlarla eğitilen modelin katsayıları** (kapıyı etkilemez; yayınlanan model değildir):
+
+| Özellik | Tüm veri | Yalnız sentetik |
+|---|---|---|
+| `seviye` | +0.1999 | +0.3712 |
+| `konu_beceri_puani` | +0.7239 | +0.8481 |
+| `konudaki_onceki_soru_sayisi` | +0.1219 | -0.0506 |
+| `konudaki_onceki_riskli_sayisi` | -0.7480 | -0.5173 |
+| `son_karar_suresi_sn` | -0.1640 | -0.1081 |
+| `son_gerekce_uzunlugu` | +0.3580 | +0.4334 |
+| `oturum_no` | +0.0251 | +0.0350 |
+
+**`son_karar_suresi_sn` katsayısı yorumlanmamalı.** Tüm veride katsayı -0.1640
+(negatif). Sentetik formülde ise bu girdinin etkisi **pozitif yönde ve zayıf**: önceki karar süresi
+kısaldıkça logit düşüyor, ama en fazla 0.32 logit. Etki 392 sentetik zor
+satırın 173 tanesinde sıfır (önceki süre formüldeki eşiğin üstünde); ortalaması
+0.066 logit.
+
+- **Yalnız sentetik veriyle eğitince de katsayı negatif** (-0.1081). Bu kadar
+  küçük bir etki, bu veri miktarında gürültüden ayırt edilemiyor.
+- **Gerçek veri eklenince katsayı -0.1081 → -0.1640.** Gerçek zor satırlarda önceki
+  karar süresi kısa (medyan 5.0 sn; sentetikte 7.39 sn) ve satırların
+  çoğu başarılı (26 satırın 21 tanesinde `basari = 1`). Gerçek oyuncular tek tek çıkarıldığında en büyük değişim `7200e59a` oyuncusunda: katsayı -0.1233 oluyor. 3. oturumdan sonra hızlanan (ezber şüpheli) oyuncu `5fe43686` çıkarılınca katsayı -0.1623 oluyor; yani bu oyuncu farkı tek başına açıklamıyor.
+- **Sonuç:** bu katsayı yorumlanmamalı. Model ve sentetik üretici bu sonuca göre değiştirilmedi.
+
 ## Sınırlar
 
 - **Az sayıda gerçek kişi, AUC oynak.** Gerçek veri az sayıda oyuncudan geliyor: **7 oyuncu,
@@ -99,6 +124,8 @@ Bu katsayılar büyük ölçüde sentetik üreticinin kuralını yansıtır (bkz
   Gerçek zor satır **26** ve bunların **5'inde `basari = 0`** var; bu yüzden
   yalnız gerçek satırlarda hesaplanan AUC **çok oynaktır**. Katlama bazında AUC'ler ve standart sapma bu oynaklığı
   gösterir; ortalama AUC kesin bir başarı ölçüsü olarak okunmamalıdır.
+- **Katlamalar arasında fark var.** 5 katlamanın AUC standart sapması **0.0738**. 1 katlama eşiğin (0.65) altında: 5. katlama (0.6225).
+  Kapı ortalamaya bakar; tek bir katlamanın sonucu o katlamaya hangi oyuncuların düştüğüne bağlıdır.
 - **Model büyük ölçüde sentetik kuralı öğreniyor.** Zor satırların büyük çoğunluğu sentetik (%93.8). Sentetik etiket
   bilinen bir lojistik formülle üretildi (`scripts/sentetik.py`), bu yüzden lojistik regresyon o formülü kolayca geri
   buluyor. Kapıdaki AUC, gerçek öğrencilerdeki başarıdan çok bu kuralın ne kadar iyi geri bulunduğunu ölçer.

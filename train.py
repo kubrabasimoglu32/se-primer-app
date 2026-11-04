@@ -8,10 +8,13 @@ Akış (../huggingface-hello-web/hf_cli.py → cmd_train, onnx_aktar, model_kart
      Kapı: 5 katlamanın ortalama ROC-AUC'si >= 0.65. Kapı geçilmezse model/'e hiçbir şey yazılmaz, çıkış kodu 1.
   3. Kapı geçilirse: tüm veriyle yeniden eğitim → model/model.onnx (sklearn farkı > 1e-4 ise durur),
      model/config.json (sözleşme), model/README.md (model kartı).
+  Bilgi amaçlı (kapıyı etkilemez): yalnız sentetik satırlarla eğitilen modelin katsayıları ve
+  son_karar_suresi_sn katsayısının teşhisi (üretici formülündeki gerçek etki, gerçek oyuncuları tek tek çıkarma).
 """
 from __future__ import annotations
 
 import json
+import math
 import shutil
 import sys
 from pathlib import Path
@@ -191,6 +194,69 @@ def kart_metinleri(v: dict) -> dict:
     }
 
 
+def sentetik_uretici():
+    """scripts/sentetik.py'yi modül olarak yükler; formüldeki etki üreticinin kendi fonksiyonundan hesaplanır."""
+    import importlib.util
+
+    tanim = importlib.util.spec_from_file_location("sentetik", KOK / "scripts" / "sentetik.py")
+    modul = importlib.util.module_from_spec(tanim)
+    tanim.loader.exec_module(modul)
+    return modul
+
+
+def katsayi_teshisi(zor: pd.DataFrame, kats_tum: list[dict]) -> dict:
+    """Bilgi amaçlı (kapıyı etkilemez): yalnız sentetik katsayılar ve son_karar_suresi_sn teşhisi."""
+    sentetik = zor[zor["kaynak"] == "sentetik"]
+    gercek = zor[zor["kaynak"] == "gercek"]
+    hedef_oz = "son_karar_suresi_sn"
+    i = OZELLIKLER.index(hedef_oz)
+
+    def katsayi(d: pd.DataFrame) -> float:
+        return round(float(model_kur().fit(d[OZELLIKLER], d[HEDEF]).named_steps["lr"].coef_[0][i]), 4)
+
+    kats_sen = katsayilar(model_kur().fit(sentetik[OZELLIKLER], sentetik[HEDEF]))
+
+    # Üretici formülünde son_karar_suresi_sn'nin etkisi: süre çok büyük olunca logit ne kadar artıyor?
+    uretici = sentetik_uretici()
+
+    def logit(p: float) -> float:
+        return math.log(p / (1 - p))
+
+    etkiler = np.array([
+        logit(uretici.basari_olasiligi({**r, hedef_oz: 1e9}, True)) - logit(uretici.basari_olasiligi(r, True))
+        for r in sentetik[OZELLIKLER].to_dict("records")
+    ])
+
+    # Gerçek oyuncuları tek tek çıkarınca katsayı ne oluyor?
+    tek_tek = {p[:8]: katsayi(zor[zor["proje_id"] != p]) for p in sorted(gercek["proje_id"].unique())}
+    k_tum = next(k["katsayi_olcekli"] for k in kats_tum if k["ozellik"] == hedef_oz)
+    en_etkili = max(tek_tek, key=lambda p: abs(tek_tek[p] - k_tum)) if tek_tek else None
+    return {
+        "sentetik_katsayilar": {k["ozellik"]: k["katsayi_olcekli"] for k in kats_sen},
+        "son_karar_suresi_sn": {
+            "katsayi_tum": k_tum,
+            "katsayi_sentetik": next(k["katsayi_olcekli"] for k in kats_sen if k["ozellik"] == hedef_oz),
+            "formul_etki_maks_logit": round(float(etkiler.max()), 3),
+            "formul_etki_ort_logit": round(float(etkiler.mean()), 3),
+            "formul_etki_sifir_satir": int((etkiler < 1e-12).sum()),
+            "sentetik_zor_satir": int(len(sentetik)),
+            "son_sure_medyan_gercek": round(float(gercek[hedef_oz].median()), 2) if len(gercek) else None,
+            "son_sure_medyan_sentetik": round(float(sentetik[hedef_oz].median()), 2),
+            "gercek_zor_basari1": int((gercek[HEDEF] == 1).sum()),
+            "gercek_zor_satir": int(len(gercek)),
+            "gercek_oyuncu_cikarilinca": tek_tek,
+            "en_etkili_gercek_oyuncu": en_etkili,
+        },
+    }
+
+
+def model_dir_bosalt() -> None:
+    """model/'in içini boşaltır, klasörü bırakır (Windows/OneDrive açık klasörü silmeye izin vermeyebilir)."""
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    for oge in MODEL_DIR.iterdir():
+        shutil.rmtree(oge) if oge.is_dir() else oge.unlink()
+
+
 def onnx_aktar(model: Pipeline, X_ornek: pd.DataFrame) -> float:
     """model.onnx: girdi 'input' float32 [n, 7] (config.json features sırası); çıktılar 'label' ve 'probabilities'."""
     import onnxruntime as ort
@@ -206,8 +272,8 @@ def onnx_aktar(model: Pipeline, X_ornek: pd.DataFrame) -> float:
     p_onnx = oturum.run(["probabilities"], {"input": X_ornek.to_numpy(np.float32)})[0]
     fark = float(np.abs(p_onnx - model.predict_proba(X_ornek)).max())
     if fark > ONNX_TOLERANS:
-        shutil.rmtree(MODEL_DIR)  # yarım paket bırakma
-        sys.exit(f"✗ ONNX çıktısı sklearn'den sapıyor (maks fark {fark:.2e} > {ONNX_TOLERANS}); model/ silindi.")
+        model_dir_bosalt()  # yarım paket bırakma
+        sys.exit(f"✗ ONNX çıktısı sklearn'den sapıyor (maks fark {fark:.2e} > {ONNX_TOLERANS}); model/ boşaltıldı.")
     return fark
 
 
@@ -226,6 +292,34 @@ def katsayi_yorumu(k: dict) -> str:
     return f"1 std artış p(basari)'yı {yon} ({derece} etki)"
 
 
+def son_karar_metni(t: dict, dikkat: dict) -> str:
+    """son_karar_suresi_sn katsayısının teşhisi; bütün sayılar katsayi_teshisi()'nden gelir."""
+    def yon(k: float) -> str:
+        return "negatif" if k < 0 else "pozitif"
+
+    tek = t["gercek_oyuncu_cikarilinca"]
+    dikkat_metni = ""
+    for p in dikkat:
+        if p in tek:
+            dikkat_metni = (f" 3. oturumdan sonra hızlanan (ezber şüpheli) oyuncu `{p}` çıkarılınca katsayı "
+                            f"{tek[p]:+.4f} oluyor; yani bu oyuncu farkı tek başına açıklamıyor.")
+    en = t["en_etkili_gercek_oyuncu"]
+    en_metni = (f" Gerçek oyuncular tek tek çıkarıldığında en büyük değişim `{en}` oyuncusunda: katsayı "
+                f"{tek[en]:+.4f} oluyor." if en else "")
+    return f"""**`son_karar_suresi_sn` katsayısı yorumlanmamalı.** Tüm veride katsayı {t["katsayi_tum"]:+.4f}
+({yon(t["katsayi_tum"])}). Sentetik formülde ise bu girdinin etkisi **pozitif yönde ve zayıf**: önceki karar süresi
+kısaldıkça logit düşüyor, ama en fazla {t["formul_etki_maks_logit"]} logit. Etki {t["sentetik_zor_satir"]} sentetik zor
+satırın {t["formul_etki_sifir_satir"]} tanesinde sıfır (önceki süre formüldeki eşiğin üstünde); ortalaması
+{t["formul_etki_ort_logit"]} logit.
+
+- **Yalnız sentetik veriyle eğitince de katsayı {yon(t["katsayi_sentetik"])}** ({t["katsayi_sentetik"]:+.4f}). Bu kadar
+  küçük bir etki, bu veri miktarında gürültüden ayırt edilemiyor.
+- **Gerçek veri eklenince katsayı {t["katsayi_sentetik"]:+.4f} → {t["katsayi_tum"]:+.4f}.** Gerçek zor satırlarda önceki
+  karar süresi kısa (medyan {t["son_sure_medyan_gercek"]} sn; sentetikte {t["son_sure_medyan_sentetik"]} sn) ve satırların
+  çoğu başarılı ({t["gercek_zor_satir"]} satırın {t["gercek_zor_basari1"]} tanesinde `basari = 1`).{en_metni}{dikkat_metni}
+- **Sonuç:** bu katsayı yorumlanmamalı. Model ve sentetik üretici bu sonuca göre değiştirilmedi."""
+
+
 def sinif_metni(d: dict) -> str:
     return ", ".join(f"`basari = {k}`: {n}" for k, n in d.items()) or "—"
 
@@ -240,6 +334,16 @@ def model_karti(config: dict, kats: list[dict], katlamalar: list[dict]) -> str:
         f"| {k['katlama']} | {k['test_satir']} | {k['test_grup']} | {k['test_gercek_satir']} | "
         f"{k['test_sinif_sayilari'].get('0', 0)} / {k['test_sinif_sayilari'].get('1', 0)} | {k['auc']} |"
         for k in katlamalar)
+    tk = m["bilgi_teshis"]
+    sentetik_kiyas_satirlari = "\n".join(
+        f"| `{k['ozellik']}` | {k['katsayi_olcekli']:+.4f} | {tk['sentetik_katsayilar'][k['ozellik']]:+.4f} |"
+        for k in kats)
+    son_karar_paragrafi = son_karar_metni(tk["son_karar_suresi_sn"], v.get("gercek_dikkat_tekrar", {}))
+    alt = [k for k in katlamalar if k["auc"] < config["kapi"]["esik"]]
+    katlama_esik_metni = (
+        f"{len(alt)} katlama eşiğin ({config['kapi']['esik']}) altında: "
+        + ", ".join(f"{k['katlama']}. katlama ({k['auc']})" for k in alt) + "."
+        if alt else f"Hiçbir katlama eşiğin ({config['kapi']['esik']}) altında değil.")
     katsayi_satirlari = "\n".join(
         f"| {i} | `{k['ozellik']}` | {k['katsayi_olcekli']:+.4f} | {katsayi_yorumu(k)} |"
         for i, k in enumerate(kats, start=1))
@@ -324,6 +428,14 @@ log-odds'taki değişim. İşaret, etkinin yönünü gösterir. Kesişim (interc
 
 Bu katsayılar büyük ölçüde sentetik üreticinin kuralını yansıtır (bkz. Sınırlar). Nedensel bir ilişki olarak okunmamalıdır.
 
+**Bilgi amaçlı: yalnız sentetik satırlarla eğitilen modelin katsayıları** (kapıyı etkilemez; yayınlanan model değildir):
+
+| Özellik | Tüm veri | Yalnız sentetik |
+|---|---|---|
+{sentetik_kiyas_satirlari}
+
+{son_karar_paragrafi}
+
 ## Sınırlar
 
 - **Az sayıda gerçek kişi, AUC oynak.** Gerçek veri az sayıda oyuncudan geliyor: **{v["gercek_oyuncu"]} oyuncu,
@@ -331,6 +443,8 @@ Bu katsayılar büyük ölçüde sentetik üreticinin kuralını yansıtır (bkz
   Gerçek zor satır **{v["gercek_zor_satir"]}** ve bunların **{sayi_eki(v["gercek_zor_basari0"], "bulunma")} `basari = 0`** var; bu yüzden
   yalnız gerçek satırlarda hesaplanan AUC **çok oynaktır**. Katlama bazında AUC'ler ve standart sapma bu oynaklığı
   gösterir; ortalama AUC kesin bir başarı ölçüsü olarak okunmamalıdır.
+- **Katlamalar arasında fark var.** 5 katlamanın AUC standart sapması **{m["auc_std"]}**. {katlama_esik_metni}
+  Kapı ortalamaya bakar; tek bir katlamanın sonucu o katlamaya hangi oyuncuların düştüğüne bağlıdır.
 - **Model büyük ölçüde sentetik kuralı öğreniyor.** Zor satırların büyük çoğunluğu sentetik (%{v["sentetik_zor_yuzde"]}). Sentetik etiket
   bilinen bir lojistik formülle üretildi (`scripts/sentetik.py`), bu yüzden lojistik regresyon o formülü kolayca geri
   buluyor. Kapıdaki AUC, gerçek öğrencilerdeki başarıdan çok bu kuralın ne kadar iyi geri bulunduğunu ölçer.
@@ -380,6 +494,17 @@ def main() -> None:
     print(f"Yalnız gerçek satırlarda OOF AUC: {gercek['auc']}  (satır {gercek['satir']}, sınıflar {gercek['sinif_sayilari']})")
     print(f"zorluk_kaynagi (zor satırlar): {zk}")
 
+    # Bilgi amaçlı teşhis (kapıyı etkilemez): yalnız sentetik katsayılar ve son_karar_suresi_sn
+    teshis = katsayi_teshisi(zor, katsayilar(model_kur().fit(X, y)))
+    sk = teshis["son_karar_suresi_sn"]
+    print("Bilgi amaçlı — yalnız sentetik katsayılar (ölçekli):")
+    for o, k in teshis["sentetik_katsayilar"].items():
+        print(f"  {o:<32} {k:+.4f}")
+    print(f"  son_karar_suresi_sn: tüm {sk['katsayi_tum']:+.4f}, yalnız sentetik {sk['katsayi_sentetik']:+.4f}; "
+          f"formül etkisi maks {sk['formul_etki_maks_logit']} / ort {sk['formul_etki_ort_logit']} logit, "
+          f"{sk['sentetik_zor_satir']} satırın {sk['formul_etki_sifir_satir']} tanesinde sıfır")
+    print(f"  gerçek oyuncu çıkarılınca: {sk['gercek_oyuncu_cikarilinca']}")
+
     if auc_ort < ESIK_KAPI:
         print(f"✗ KAPI GEÇİLMEDİ: ortalama AUC {auc_ort} < {ESIK_KAPI}. model/'e hiçbir şey yazılmadı.")
         sys.exit(1)
@@ -387,9 +512,7 @@ def main() -> None:
 
     # Paket: tüm veriyle yeniden eğitim (spec §10.6)
     model = model_kur().fit(X, y)
-    if MODEL_DIR.exists():
-        shutil.rmtree(MODEL_DIR)
-    MODEL_DIR.mkdir(parents=True)
+    model_dir_bosalt()
     fark = onnx_aktar(model, X)
     kats = katsayilar(model)
 
@@ -415,6 +538,7 @@ def main() -> None:
             "onnx_sklearn_maks_fark": float(f"{fark:.3e}"),
             "kesisim": round(float(model.named_steps["lr"].intercept_[0]), 4),
             "katsayilar": {k["ozellik"]: k["katsayi_olcekli"] for k in kats},
+            "bilgi_teshis": teshis,
         },
         "eval": {"bolme": "StratifiedGroupKFold", "n_splits": N_KATLAMA, "shuffle": True,
                  "random_state": SEED, "grup": "proje_id", "katlamalar": cv["katlamalar"]},

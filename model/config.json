@@ -91,6 +91,39 @@
       "son_karar_suresi_sn": -0.164,
       "son_gerekce_uzunlugu": 0.358,
       "oturum_no": 0.0251
+    },
+    "bilgi_teshis": {
+      "sentetik_katsayilar": {
+        "seviye": 0.3712,
+        "konu_beceri_puani": 0.8481,
+        "konudaki_onceki_soru_sayisi": -0.0506,
+        "konudaki_onceki_riskli_sayisi": -0.5173,
+        "son_karar_suresi_sn": -0.1081,
+        "son_gerekce_uzunlugu": 0.4334,
+        "oturum_no": 0.035
+      },
+      "son_karar_suresi_sn": {
+        "katsayi_tum": -0.164,
+        "katsayi_sentetik": -0.1081,
+        "formul_etki_maks_logit": 0.32,
+        "formul_etki_ort_logit": 0.066,
+        "formul_etki_sifir_satir": 173,
+        "sentetik_zor_satir": 392,
+        "son_sure_medyan_gercek": 5.0,
+        "son_sure_medyan_sentetik": 7.39,
+        "gercek_zor_basari1": 21,
+        "gercek_zor_satir": 26,
+        "gercek_oyuncu_cikarilinca": {
+          "043ba9d7": -0.155,
+          "5fe43686": -0.1623,
+          "7200e59a": -0.1233,
+          "9ab99671": -0.1799,
+          "9dd0601a": -0.1762,
+          "db7a6eeb": -0.1533,
+          "e0b1e24c": -0.1621
+        },
+        "en_etkili_gercek_oyuncu": "7200e59a"
+      }
     }
   },
   "eval": {
