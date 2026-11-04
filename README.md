@@ -19,7 +19,7 @@ yolun sonucunu ve nedenini gösterir. Proje bitene kadar öğrencinin gelişimin
 | Veri Toplama Modu · Parite sayfası | https://kubrabasimoglu32.github.io/se-primer-app/?veri=1 · https://kubrabasimoglu32.github.io/se-primer-app/?parite=1 |
 | Hugging Face model sayfası | https://huggingface.co/Kubra37/se-primer-zorluk |
 | Hugging Face model (v2.0.1, commit'e sabit) | https://huggingface.co/Kubra37/se-primer-zorluk/resolve/576e42b0e833d418d13c3fe9e528e4194466b8f5/model.onnx |
-| Demo videosu (v2) | _eklenecek_ |
+| Demo videosu (v2) |(https://youtube.com/shorts/lA_u-f4amM4?feature=share) |
 | Uygulama (AI Studio, ikincil) | https://ai.studio/apps/8074a940-e9fe-4c74-96fc-ff23a83151f5?fullscreenApplet=true |
 | v1 demo videosu (geçen hafta) | https://youtu.be/ScYtHzTFs4Q |
 
