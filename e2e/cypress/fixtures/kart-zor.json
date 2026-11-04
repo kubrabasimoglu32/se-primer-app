@@ -1,0 +1,78 @@
+{
+  "projeId": "00000000-0000-4000-8000-000000000008",
+  "ad": "Kabul Testi",
+  "aciklama": "Cypress kabul örneği 8 için proje kartı.",
+  "asama": "tasarim",
+  "seviye": "Deneyimliyim",
+  "rol": "Tek kişi",
+  "hedef": "Kabul örneklerini denemek",
+  "teknoloji": { "onYuz": "React + Vite", "arkaUc": "Node.js / Express", "veriTabani": "PostgreSQL" },
+  "mimari": "İstemci Ağırlıklı SPA + REST API",
+  "kisiselVeri": "Hayır",
+  "dosyaYapisi": "model-testi/\n├── src/\n└── package.json",
+  "beceri": {
+    "kapsam": 3,
+    "mimari": 5,
+    "veriTabani": 5,
+    "dosyaDuzeni": 3,
+    "test": 3,
+    "guvenlik": 3,
+    "dagitim": 3,
+    "rapor": 3
+  },
+  "acikRiskler": [],
+  "oturumlar": [
+    {
+      "no": 1,
+      "tarih": "1 Kasım 2026",
+      "degisiklikler": ["Rutin kontrol"],
+      "not": "Cypress test oturumu.",
+      "sorular": [
+        {
+          "soruId": "K-02",
+          "konu": "kapsam",
+          "tur": "karar",
+          "metin": "Kabul kriteri",
+          "cevap": "A",
+          "riskDerecesi": "dusuk",
+          "kararSuresiSn": 12,
+          "gerekceUzunlugu": 40
+        },
+        {
+          "soruId": "G-01",
+          "konu": "guvenlik",
+          "tur": "karar",
+          "metin": "Kişisel veri",
+          "cevap": "A",
+          "riskDerecesi": "dusuk",
+          "kararSuresiSn": 15,
+          "gerekceUzunlugu": 60
+        },
+        {
+          "soruId": "R-02",
+          "konu": "rapor",
+          "tur": "karar",
+          "metin": "Karar kaydı",
+          "cevap": "A",
+          "riskDerecesi": "dusuk",
+          "kararSuresiSn": 20,
+          "gerekceUzunlugu": 100
+        }
+      ],
+      "sonuc": "saglikli",
+      "beceriSnapshot": {
+        "kapsam": 3,
+        "mimari": 5,
+        "veriTabani": 5,
+        "dosyaDuzeni": 3,
+        "test": 3,
+        "guvenlik": 3,
+        "dagitim": 3,
+        "rapor": 3
+      },
+      "puanFarki": {},
+      "eklenenRiskler": [],
+      "kapatilanRiskler": []
+    }
+  ]
+}

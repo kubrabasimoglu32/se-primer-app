@@ -1,0 +1,235 @@
+{
+  "title": "SE Primer v2 — zorluk modeli",
+  "description": "Öğrencinin bir konudaki zor soruyu düşük riskli cevaplama olasılığı p(basari). SE Primer'de 1. ve 3. sorunun zorluğunu seçer. Öğrenciyi notlamak için KULLANILMAZ.",
+  "target": "basari",
+  "class_labels": {
+    "0": "orta/yüksek riskli seçim",
+    "1": "düşük riskli seçim"
+  },
+  "features": [
+    {
+      "name": "seviye",
+      "label": "Seviye (0 = Yeni başladım, 1 = Biraz deneyimim var, 2 = Deneyimliyim)",
+      "example": 0.0
+    },
+    {
+      "name": "konu_beceri_puani",
+      "label": "Sorulacak konunun beceri puanı (0–5)",
+      "example": 0.0
+    },
+    {
+      "name": "konudaki_onceki_soru_sayisi",
+      "label": "Bu konuda önceki oturumlarda cevaplanan soru sayısı",
+      "example": 1.0
+    },
+    {
+      "name": "konudaki_onceki_riskli_sayisi",
+      "label": "Bu konuda önceki oturumlarda orta/yüksek riskli seçim sayısı",
+      "example": 1.0
+    },
+    {
+      "name": "son_karar_suresi_sn",
+      "label": "Bir önceki sorudaki karar süresi (sn)",
+      "example": 0.0
+    },
+    {
+      "name": "son_gerekce_uzunlugu",
+      "label": "Bir önceki sorudaki gerekçe uzunluğu (karakter)",
+      "example": 0.0
+    },
+    {
+      "name": "oturum_no",
+      "label": "Oturumun sıra numarası",
+      "example": 2.0
+    }
+  ],
+  "classes": [
+    "0",
+    "1"
+  ],
+  "onnx": {
+    "input": "input",
+    "input_dtype": "float32",
+    "outputs": [
+      "label",
+      "probabilities"
+    ],
+    "probability_index": 1
+  },
+  "esik": 0.5,
+  "kapi": {
+    "metrik": "5 katlama ortalama ROC-AUC",
+    "esik": 0.65,
+    "gecti": true
+  },
+  "metrics": {
+    "auc_ortalama": 0.7693,
+    "auc_std": 0.0738,
+    "auc_katlamalar": [
+      0.7962,
+      0.804,
+      0.8181,
+      0.8059,
+      0.6225
+    ],
+    "gercek_oof": {
+      "satir": 26,
+      "grup": 7,
+      "sinif_sayilari": {
+        "0": 5,
+        "1": 21
+      },
+      "auc": 0.6
+    },
+    "onnx_sklearn_maks_fark": 8.269e-08,
+    "kesisim": -0.084,
+    "katsayilar": {
+      "seviye": 0.1999,
+      "konu_beceri_puani": 0.7239,
+      "konudaki_onceki_soru_sayisi": 0.1219,
+      "konudaki_onceki_riskli_sayisi": -0.748,
+      "son_karar_suresi_sn": -0.164,
+      "son_gerekce_uzunlugu": 0.358,
+      "oturum_no": 0.0251
+    },
+    "bilgi_teshis": {
+      "sentetik_katsayilar": {
+        "seviye": 0.3712,
+        "konu_beceri_puani": 0.8481,
+        "konudaki_onceki_soru_sayisi": -0.0506,
+        "konudaki_onceki_riskli_sayisi": -0.5173,
+        "son_karar_suresi_sn": -0.1081,
+        "son_gerekce_uzunlugu": 0.4334,
+        "oturum_no": 0.035
+      },
+      "son_karar_suresi_sn": {
+        "katsayi_tum": -0.164,
+        "katsayi_sentetik": -0.1081,
+        "formul_etki_maks_logit": 0.32,
+        "formul_etki_ort_logit": 0.066,
+        "formul_etki_sifir_satir": 173,
+        "sentetik_zor_satir": 392,
+        "son_sure_medyan_gercek": 5.0,
+        "son_sure_medyan_sentetik": 7.39,
+        "gercek_zor_basari1": 21,
+        "gercek_zor_satir": 26,
+        "gercek_oyuncu_cikarilinca": {
+          "043ba9d7": -0.155,
+          "5fe43686": -0.1623,
+          "7200e59a": -0.1233,
+          "9ab99671": -0.1799,
+          "9dd0601a": -0.1762,
+          "db7a6eeb": -0.1533,
+          "e0b1e24c": -0.1621
+        },
+        "en_etkili_gercek_oyuncu": "7200e59a"
+      }
+    }
+  },
+  "eval": {
+    "bolme": "StratifiedGroupKFold",
+    "n_splits": 5,
+    "shuffle": true,
+    "random_state": 13,
+    "grup": "proje_id",
+    "katlamalar": [
+      {
+        "katlama": 1,
+        "test_satir": 85,
+        "test_grup": 9,
+        "test_gercek_satir": 0,
+        "test_sinif_sayilari": {
+          "0": 43,
+          "1": 42
+        },
+        "auc": 0.7962
+      },
+      {
+        "katlama": 2,
+        "test_satir": 83,
+        "test_grup": 11,
+        "test_gercek_satir": 13,
+        "test_sinif_sayilari": {
+          "0": 42,
+          "1": 41
+        },
+        "auc": 0.804
+      },
+      {
+        "katlama": 3,
+        "test_satir": 81,
+        "test_grup": 10,
+        "test_gercek_satir": 8,
+        "test_sinif_sayilari": {
+          "0": 42,
+          "1": 39
+        },
+        "auc": 0.8181
+      },
+      {
+        "katlama": 4,
+        "test_satir": 87,
+        "test_grup": 12,
+        "test_gercek_satir": 0,
+        "test_sinif_sayilari": {
+          "0": 46,
+          "1": 41
+        },
+        "auc": 0.8059
+      },
+      {
+        "katlama": 5,
+        "test_satir": 82,
+        "test_grup": 10,
+        "test_gercek_satir": 5,
+        "test_sinif_sayilari": {
+          "0": 41,
+          "1": 41
+        },
+        "auc": 0.6225
+      }
+    ]
+  },
+  "veri": {
+    "dosya": "data/oturumlar.csv",
+    "toplam_satir": 762,
+    "gercek_satir": 57,
+    "sentetik_satir": 705,
+    "zor_satir": 418,
+    "gercek_zor_satir": 26,
+    "sentetik_zor_satir": 392,
+    "grup": 52,
+    "gercek_grup": 7,
+    "sentetik_grup": 45,
+    "zorluk_kaynagi": {
+      "kural": 123,
+      "yazitura": 208,
+      "yedek": 87
+    },
+    "gercek_oyuncu": 7,
+    "gercek_oturum": 19,
+    "sentetik_oyuncu": 45,
+    "gercek_zor_basari0": 5,
+    "gercek_zor_basari1": 21,
+    "sentetik_zor_yuzde": 93.8,
+    "gercek_seviye_oyuncu": {
+      "0": 7,
+      "1": 0,
+      "2": 0
+    },
+    "gercek_seviye0_oyuncu": 7,
+    "gercek_ornek_proje_oyuncu": 2,
+    "gercek_dikkat_oyuncu": 1,
+    "gercek_dikkat_tekrar": {
+      "5fe43686": {
+        "soru_id": "V-01",
+        "oturum": 7,
+        "toplam_oturum": 7
+      }
+    },
+    "banka_soru": 23
+  },
+  "seed": 13,
+  "sklearn_version": "1.9.1",
+  "python_version": "3.12"
+}
